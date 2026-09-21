@@ -63,12 +63,12 @@
   .pill.green{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
   .attribute-cell{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
   .attribute-chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;white-space:nowrap}
-  .attribute-dialog{width:min(520px,calc(100vw - 24px));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(15,23,42,.28)}
-  .attribute-dialog::backdrop{background:rgba(15,23,42,.45)}
-  .attribute-dialog-body{padding:18px}
-  .attribute-dialog-body h3{font-size:17px;margin:0 0 6px;color:#111827}
-  .attribute-dialog-body input[type="text"]{width:100%;margin-top:8px}
-  .attribute-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  .attribute-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
+  .attribute-settings .mode-check{font-weight:700;color:#1e293b}
+  .attribute-role-list{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .attribute-role-list .attribute-chip{min-height:28px;padding:4px 10px;font-weight:700}
+  .attribute-role-list .attribute-chip.secondary{border-color:#fbcfe8;background:#fdf2f8;color:#9d174d}
+  .col-add-attribute select{width:100%;min-width:88px}
   .sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.2)}
   pre{white-space:pre-wrap;background:#0b1020;color:#e5e7eb;border-radius:10px;padding:10px;max-height:380px;overflow:auto}
   .empty{color:#6b7280;text-align:center;padding:16px;background:#f9fafb;border-radius:8px}
@@ -90,7 +90,7 @@
   .column-options input:checked+span::before{content:"✓";border-color:#2563eb;background:#2563eb}
   .column-options input:focus-visible+span{outline:2px solid #2563eb;outline-offset:2px}
   .hide-value-columns .col-value,.hide-bonus-rate-columns .col-bonus-rate,.hide-add-count-column .col-add-count{display:none}
-  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-attributes{width:150px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-priority{width:76px}.col-action{width:60px}
+  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-attributes{width:150px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
   .table-scroll td.col-empty{grid-column:1/-1;width:100%;justify-content:center;text-align:center}
   .inventory-cell-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;color:#475569}
   .inventory-cell-summary span{font-size:12px}
@@ -228,7 +228,7 @@
 <body class="hide-value-columns hide-bonus-rate-columns">
 <header>
   <h1>背包排列优化工具</h1>
-  <p>优先完整装入；同属性相邻才会触发加成，默认优先让格数更多的法宝获得有效邻接。</p>
+  <p>优先完整装入；相同主/副属性的法宝相邻才会触发加成，默认优先让格数更多的法宝获得有效邻接。</p>
 </header>
 <main>
   <section>
@@ -256,12 +256,20 @@
         <label><input id="allowMirror" type="checkbox"> 允许镜像</label>
         <button id="resetItemsBtn">恢复默认物品库</button>
       </div>
-      <div class="hint">选择品质和添加数量后加入清单；伤害与相邻加成由格数和品质自动计算。</div>
-      <div class="hint">单格会给相邻法宝提供加成；四格及以上法宝按相邻法宝数量提升自身伤害。双方至少共享一个属性时才生效。</div>
+      <div class="attribute-settings">
+        <label class="mode-check"><input id="multiAttributeMode" type="checkbox"> 多属性</label>
+        <div class="attribute-role-list">
+          <span class="attribute-chip">主属性</span>
+          <span id="secondaryAttributeChip" class="attribute-chip secondary" hidden>副属性</span>
+        </div>
+        <input id="primaryAttribute" type="hidden" value="主属性">
+        <input id="secondaryAttribute" type="hidden" value="副属性">
+      </div>
+      <div class="hint">默认单属性，全部按主属性添加。勾选“多属性”后会出现副属性，并可在操作前选择主属性或副属性。</div>
       <div class="column-options"><strong>显示列</strong><label><input type="checkbox" data-column-toggle="add-count" checked><span>添加数量</span></label></div>
       <div class="table-scroll library-scroll" aria-label="物品库列表">
         <table id="itemsTable">
-          <thead><tr><th class="col-enabled">启用</th><th class="col-name">物品</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-value">默认属性</th><th class="col-bonus-rate">加成率%</th><th class="col-add-count">添加数量</th><th class="col-action">操作</th></tr></thead>
+          <thead><tr><th class="col-enabled">启用</th><th class="col-name">物品</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-value">默认属性</th><th class="col-bonus-rate">加成率%</th><th class="col-add-count">添加数量</th><th class="col-add-attribute">属性</th><th class="col-action">操作</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -286,7 +294,7 @@
         <button id="renumberBtn">按格数/品质重新编号</button>
         <button id="clearInventoryBtn" class="danger">清空清单</button>
       </div>
-      <div class="hint">每个条目代表一个实际拥有的法宝。点击“多属性”可填写一个或多个属性；只有共享至少一个属性的相邻法宝才会产生加成。</div>
+      <div class="hint">每个条目代表一个实际拥有的法宝，属性由物品库加入时选择。只有属性相同的相邻法宝才会产生加成。</div>
       <div class="table-scroll inventory-scroll" aria-label="已有物品清单">
         <table id="inventoryTable">
           <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-attributes">属性</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
@@ -429,34 +437,21 @@
       <ol>
         <li>先设置背包宽度、高度，并点击空间格子标记已解锁区域。</li>
         <li>截图自动识别不准时，点击“开始半自动标注”：点物品任意格，选择正确形状，依次确认到全部格子完成。</li>
-        <li>从物品库添加物品到已有物品清单；真正参与计算的是已有物品清单。</li>
+        <li>物品库默认单属性。需要第二种属性时勾选“多属性”，然后在操作前选择主属性或副属性。</li>
+        <li>每种物品的“属性”默认都是主属性；勾选多属性后才可以改成副属性。</li>
         <li>物品库只显示添加数量；伤害和相邻加成由法宝格数、品质自动计算。</li>
         <li>需要指定某件法宝优先获得更多邻居时，在“邻接优先级”中填写数字：1 最高；留空则格数越多优先级越高。</li>
         <li>单格法宝会给每个同属性的相邻法宝提供百分比伤害加成。</li>
         <li>所有四格及以上法宝每相邻一个同属性的不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
-        <li>法宝可拥有多个属性；双方只要共享任意一个属性就生效，同一对法宝只计算一次，不会因共享多个属性重复叠加。</li>
+        <li>只有属性相同的法宝相邻才会生效；主属性与副属性不同，因此两者相邻不会获得加成。</li>
         <li>开启“自身受加成”的红色三格物品按自身邻接规则计算；未开启的三格物品不因相邻物品给自身加成。</li>
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
         <li>融合求解器会保留原有完整装入优先、BigInt 位掩码、单格延迟分配与字典序评分，并在完整方案上追加 LNS（局部摧毁 + 精确修复）搜索。</li>
       </ol>
-      <p class="hint">重点邻接与有效邻接均按“共享至少一个属性的相邻法宝”计算，同一对法宝即使共享多个属性或接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。默认格数优先级为五格及以上 ＞ 四格 ＞ 三格 ＞ 两格 ＞ 单格。</p>
+      <p class="hint">重点邻接与有效邻接均按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。默认格数优先级为五格及以上 ＞ 四格 ＞ 三格 ＞ 两格 ＞ 单格。</p>
     </div>
   </section>
 </main>
-<dialog id="attributeDialog" class="attribute-dialog" aria-labelledby="attributeDialogTitle">
-  <div class="attribute-dialog-body">
-    <h3 id="attributeDialogTitle">设置法宝属性</h3>
-    <div id="attributeDialogItem" class="hint"></div>
-    <label style="display:block;margin:10px 0 0">属性名称（可填写多个）
-      <input id="attributeInput" type="text" placeholder="例如：火, 雷；或 攻击, 暴击">
-    </label>
-    <div class="hint">使用逗号、顿号、斜杠或空格分隔。至少保留一个属性；双方有任意共同属性时，相邻加成只计算一次。</div>
-    <div class="attribute-dialog-actions">
-      <button id="attributeCancelBtn" type="button">取消</button>
-      <button id="attributeSaveBtn" type="button" class="primary">保存属性</button>
-    </div>
-  </div>
-</dialog>
 <script>
 'use strict';
 
@@ -487,7 +482,7 @@ const AREA_VALUE_BY_QUALITY = {
   5:{red:64}
 };
 const SINGLE_RATE_BY_QUALITY = {green:5, blue:8, purple:12, gold:16};
-const DEFAULT_ATTRIBUTE = '通用';
+const DEFAULT_ATTRIBUTE = '主属性';
 // 默认邻接优先级只看占用格数：格数越多，越优先获得更多不同邻居。
 const SELF_PRIORITY_TIERS = [
   {id:'area_5_plus', label:'五格及以上'},
@@ -522,7 +517,6 @@ const RECOGNITION_QUALITY_ORDER = ['green','blue','purple','gold','red'];
 const RECOGNITION_SEED_RECT = {x:0.076, y:0.486, w:0.847, h:0.322};
 let recognitionState = createRecognitionState();
 let replacementResult = null;
-let attributeEditorIndex = -1;
 
 const DEFAULT_ITEMS = [
   {id:'one-1', name:'单格', cells:[[0,0]], quality:'purple', enabled:true},
@@ -622,6 +616,24 @@ function sharedAttributes(a,b){
 }
 function hasSharedAttribute(a,b){ return sharedAttributes(a,b).length > 0; }
 function attributeLabel(item){ return normalizeAttributes(item?.attributes).join(' / '); }
+function primaryAttributeName(){ return normalizeAttributes(document.getElementById('primaryAttribute')?.value || DEFAULT_ATTRIBUTE)[0]; }
+function secondaryAttributeName(){ return normalizeAttributes(document.getElementById('secondaryAttribute')?.value || '副属性')[0]; }
+function isMultiAttributeMode(){ return !!document.getElementById('multiAttributeMode')?.checked; }
+function normalizeAddAttributeRole(role){ return isMultiAttributeMode() && role === 'secondary' ? 'secondary' : 'primary'; }
+function selectedAddAttribute(item){ return normalizeAddAttributeRole(item?.addAttributeRole) === 'secondary' ? secondaryAttributeName() : primaryAttributeName(); }
+function syncAttributeModeControls(){
+  const multi = isMultiAttributeMode();
+  const chip = document.getElementById('secondaryAttributeChip');
+  if(chip) chip.hidden = !multi;
+  if(!multi) itemDefs.forEach(item=>{ item.addAttributeRole = 'primary'; });
+}
+function addAttributeSelectHtml(item,idx){
+  const role = normalizeAddAttributeRole(item.addAttributeRole);
+  if(!isMultiAttributeMode()){
+    return `<span class="pill">主属性</span>`;
+  }
+  return `<select data-lib-k="addAttributeRole" data-i="${idx}"><option value="primary" ${role==='primary'?'selected':''}>主属性</option><option value="secondary" ${role==='secondary'?'selected':''}>副属性</option></select>`;
+}
 function defaultBonusRate(area, quality, threeSelfBonus){
   const q = normalizeQualityForArea(quality, area);
   if(area === 1) return SINGLE_RATE_BY_QUALITY[q] ?? 0;
@@ -646,7 +658,8 @@ function normalizeItemRecord(item, keepManualRate=false){
   // 加成率不再作为用户输入项，统一由格数、品质和三格开关推导。
   let bonusRate = defaultBonusRate(area, quality, threeSelfBonus);
   const attributes = normalizeAttributes(item.attributes);
-  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, customPriority, attributes, enabled:item.enabled !== false};
+  const addAttributeRole = item.addAttributeRole === 'secondary' ? 'secondary' : 'primary';
+  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, customPriority, attributes, addAttributeRole, enabled:item.enabled !== false};
 }
 function init(){
   active = Array.from({length:6},()=>Array(7).fill(true));
@@ -654,6 +667,7 @@ function init(){
   configureWorkerCountControl();
   bindEvents();
   renderQualitySelect(document.getElementById('customQuality'), 'green', false, 1);
+  syncAttributeModeControls();
   renderSpaceGrid();
   renderItemsTable();
   renderInventoryTable();
@@ -733,14 +747,12 @@ function bindEvents(){
     lastResult = null;
     renderResultGrid(null);
   });
-  document.getElementById('attributeCancelBtn').addEventListener('click', closeAttributeDialog);
-  document.getElementById('attributeSaveBtn').addEventListener('click', saveAttributeDialog);
-  document.getElementById('attributeInput').addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){
-      e.preventDefault();
-      saveAttributeDialog();
-    }
+  document.getElementById('multiAttributeMode').addEventListener('change', ()=>{
+    syncAttributeModeControls();
+    renderItemsTable();
   });
+  document.getElementById('primaryAttribute')?.addEventListener('change', renderItemsTable);
+  document.getElementById('secondaryAttribute')?.addEventListener('change', renderItemsTable);
   document.getElementById('customQuality').addEventListener('change', e=>{
     const q = e.target.value;
     const cells = parsePattern(document.getElementById('customPattern').value || '#');
@@ -889,6 +901,7 @@ function renderItemsTable(){
       <td class="col-value" data-label="默认属性"><input type="number" data-lib-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-lib-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
       <td class="col-add-count" data-label="添加数量"><input type="number" data-add-count="${idx}" min="1" step="1" value="1"></td>
+      <td class="col-add-attribute" data-label="属性">${addAttributeSelectHtml(it,idx)}</td>
       <td class="col-action" data-label="操作"><button class="compact" data-add="${idx}" ${it.enabled===false?'disabled':''}>添加</button></td>`;
     tr.children[2].appendChild(makeMiniPreview(it.cells));
     tbody.appendChild(tr);
@@ -905,6 +918,7 @@ function renderItemsTable(){
       }
       if(k==='value') itemDefs[i].value = Math.max(0, Number(e.target.value)||0);
       if(k==='bonusRate') itemDefs[i].bonusRate = Math.max(0, Number(e.target.value)||0);
+      if(k==='addAttributeRole') itemDefs[i].addAttributeRole = normalizeAddAttributeRole(e.target.value);
       itemDefs[i] = normalizeItemRecord(itemDefs[i], true);
       renderItemsTable();
     });
@@ -940,7 +954,7 @@ function renderInventoryTable(){
       <td class="col-name" data-label="名称"><input class="name-input" type="text" data-inv-k="name" data-i="${idx}" value="${escapeAttr(it.name)}"></td>
       <td class="col-shape" data-label="形状"></td>
       <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area)}</td>
-      <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="attribute-chip">${escapeHtml(x)}</span>`).join('')}<button class="compact" type="button" data-attr-edit="${idx}">多属性</button></div></td>
+      <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="attribute-chip">${escapeHtml(x)}</span>`).join('')}</div></td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -989,37 +1003,8 @@ function renderInventoryTable(){
       renderResultGrid(null);
     });
   });
-  tbody.querySelectorAll('button[data-attr-edit]').forEach(btn=>{
-    btn.addEventListener('click', e=>openAttributeDialog(Number(e.currentTarget.dataset.attrEdit)));
-  });
   updateTableColumnLayout();
   renderInventoryCellSummary();
-}
-
-function openAttributeDialog(index){
-  if(!inventory[index]) return;
-  attributeEditorIndex = index;
-  const item = inventory[index];
-  document.getElementById('attributeDialogItem').textContent = `#${item.no} ${item.name}`;
-  document.getElementById('attributeInput').value = normalizeAttributes(item.attributes).join(', ');
-  const dialog = document.getElementById('attributeDialog');
-  if(typeof dialog.showModal === 'function') dialog.showModal();
-  else dialog.setAttribute('open','');
-  requestAnimationFrame(()=>document.getElementById('attributeInput').focus());
-}
-function closeAttributeDialog(){
-  attributeEditorIndex = -1;
-  const dialog = document.getElementById('attributeDialog');
-  if(typeof dialog.close === 'function') dialog.close();
-  else dialog.removeAttribute('open');
-}
-function saveAttributeDialog(){
-  if(!inventory[attributeEditorIndex]){ closeAttributeDialog(); return; }
-  inventory[attributeEditorIndex].attributes = normalizeAttributes(document.getElementById('attributeInput').value);
-  lastResult = null;
-  closeAttributeDialog();
-  renderInventoryTable();
-  renderResultGrid(null);
 }
 
 function renderInventoryCellSummary(){
@@ -1107,7 +1092,7 @@ function addToInventory(defIndex, count){
       quality: def.quality,
       value: def.value,
       bonusRate: def.bonusRate,
-      attributes: normalizeAttributes(def.attributes),
+      attributes: [selectedAddAttribute(def)],
       threeSelfBonus: !!def.threeSelfBonus,
       customPriority: null
     }, true));
@@ -3068,7 +3053,7 @@ function solverWorkerMain(){
 
     function areAdjacent(a,b){ return (a.neighborMask & b.mask) !== 0n; }
     function normalizedAttributes(item){
-      return Array.isArray(item && item.attributes) && item.attributes.length ? item.attributes.map(x=>String(x).trim()).filter(Boolean) : ['通用'];
+      return Array.isArray(item && item.attributes) && item.attributes.length ? item.attributes.map(x=>String(x).trim()).filter(Boolean) : ['主属性'];
     }
     function sharedAttributes(a,b){
       const right=new Set(normalizedAttributes(b).map(x=>x.toLocaleLowerCase('zh-CN')));
@@ -4601,6 +4586,9 @@ function saveConfig(){
     W,H,active,itemDefs,inventory,nextItemNo,
     allowRotate:document.getElementById('allowRotate').checked,
     allowMirror:document.getElementById('allowMirror').checked,
+    primaryAttribute:primaryAttributeName(),
+    secondaryAttribute:secondaryAttributeName(),
+    multiAttributeMode:isMultiAttributeMode(),
     useAdjacencyBonus:document.getElementById('useAdjacencyBonus').checked
   };
   localStorage.setItem('bagSolverConfig', JSON.stringify(data));
@@ -4628,6 +4616,10 @@ function loadConfig(){
     document.getElementById('gridW').value = W; document.getElementById('gridH').value = H;
     document.getElementById('allowRotate').checked = data.allowRotate === true;
     document.getElementById('allowMirror').checked = !!data.allowMirror;
+    document.getElementById('primaryAttribute').value = normalizeAttributes(data.primaryAttribute || DEFAULT_ATTRIBUTE)[0];
+    document.getElementById('secondaryAttribute').value = normalizeAttributes(data.secondaryAttribute || '副属性')[0];
+    document.getElementById('multiAttributeMode').checked = !!data.multiAttributeMode;
+    syncAttributeModeControls();
     document.getElementById('useAdjacencyBonus').checked = data.useAdjacencyBonus === true;
     lastResult = null; renderSpaceGrid(); renderItemsTable(); renderInventoryTable(); renderResultGrid(null);
   }catch(e){ alert('读取失败：配置数据损坏。'); }
