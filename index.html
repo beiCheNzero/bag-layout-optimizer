@@ -61,6 +61,14 @@
   .pill{display:inline-block;padding:2px 6px;border-radius:999px;font-size:12px;border:1px solid #dbeafe;background:#eff6ff;color:#1d4ed8;white-space:nowrap}
   .pill.gray{border-color:#e5e7eb;background:#f9fafb;color:#6b7280}
   .pill.green{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
+  .attribute-cell{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+  .attribute-chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;white-space:nowrap}
+  .attribute-dialog{width:min(520px,calc(100vw - 24px));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(15,23,42,.28)}
+  .attribute-dialog::backdrop{background:rgba(15,23,42,.45)}
+  .attribute-dialog-body{padding:18px}
+  .attribute-dialog-body h3{font-size:17px;margin:0 0 6px;color:#111827}
+  .attribute-dialog-body input[type="text"]{width:100%;margin-top:8px}
+  .attribute-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
   .sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.2)}
   pre{white-space:pre-wrap;background:#0b1020;color:#e5e7eb;border-radius:10px;padding:10px;max-height:380px;overflow:auto}
   .empty{color:#6b7280;text-align:center;padding:16px;background:#f9fafb;border-radius:8px}
@@ -82,7 +90,7 @@
   .column-options input:checked+span::before{content:"✓";border-color:#2563eb;background:#2563eb}
   .column-options input:focus-visible+span{outline:2px solid #2563eb;outline-offset:2px}
   .hide-value-columns .col-value,.hide-bonus-rate-columns .col-bonus-rate,.hide-add-count-column .col-add-count{display:none}
-  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-priority{width:76px}.col-action{width:60px}
+  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-attributes{width:150px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-priority{width:76px}.col-action{width:60px}
   .table-scroll td.col-empty{grid-column:1/-1;width:100%;justify-content:center;text-align:center}
   .inventory-cell-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;color:#475569}
   .inventory-cell-summary span{font-size:12px}
@@ -220,7 +228,7 @@
 <body class="hide-value-columns hide-bonus-rate-columns">
 <header>
   <h1>背包排列优化工具</h1>
-  <p>优先完整装入；四格及以上法宝会随相邻法宝数量提升伤害，默认优先让格数更多的法宝获得邻接。</p>
+  <p>优先完整装入；同属性相邻才会触发加成，默认优先让格数更多的法宝获得有效邻接。</p>
 </header>
 <main>
   <section>
@@ -249,7 +257,7 @@
         <button id="resetItemsBtn">恢复默认物品库</button>
       </div>
       <div class="hint">选择品质和添加数量后加入清单；伤害与相邻加成由格数和品质自动计算。</div>
-      <div class="hint">四格及以上法宝每多相邻一个不同法宝，都会增加自身伤害。横屏时物品库和已有物品清单左右并排。</div>
+      <div class="hint">单格会给相邻法宝提供加成；四格及以上法宝按相邻法宝数量提升自身伤害。双方至少共享一个属性时才生效。</div>
       <div class="column-options"><strong>显示列</strong><label><input type="checkbox" data-column-toggle="add-count" checked><span>添加数量</span></label></div>
       <div class="table-scroll library-scroll" aria-label="物品库列表">
         <table id="itemsTable">
@@ -278,10 +286,10 @@
         <button id="renumberBtn">按格数/品质重新编号</button>
         <button id="clearInventoryBtn" class="danger">清空清单</button>
       </div>
-      <div class="hint">每个条目代表一个实际拥有的法宝。留空“邻接优先级”时，默认按格数从多到少优先；也可以填写数字手动覆盖，1 为最高。</div>
+      <div class="hint">每个条目代表一个实际拥有的法宝。点击“多属性”可填写一个或多个属性；只有共享至少一个属性的相邻法宝才会产生加成。</div>
       <div class="table-scroll inventory-scroll" aria-label="已有物品清单">
         <table id="inventoryTable">
-          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
+          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-attributes">属性</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -402,7 +410,7 @@
             <div class="stat">基础伤害<b id="statBase">-</b></div>
             <div class="stat">相邻加成<b id="statBonus">-</b></div>
             <div class="stat">优先法宝邻接<b id="statPriority">-</b></div>
-            <div class="stat">总邻接数量<b id="statAdjacency">-</b></div>
+            <div class="stat">有效同属性邻接<b id="statAdjacency">-</b></div>
             <div class="stat">已用格子<b id="statArea">-</b></div>
             <div class="stat">已放物品<b id="statItems">-</b></div>
             <div class="stat">搜索节点<b id="statNodes">-</b></div>
@@ -424,16 +432,31 @@
         <li>从物品库添加物品到已有物品清单；真正参与计算的是已有物品清单。</li>
         <li>物品库只显示添加数量；伤害和相邻加成由法宝格数、品质自动计算。</li>
         <li>需要指定某件法宝优先获得更多邻居时，在“邻接优先级”中填写数字：1 最高；留空则格数越多优先级越高。</li>
-        <li>单格法宝会给每个相邻法宝提供百分比伤害加成。</li>
-        <li>所有四格及以上法宝每相邻一个不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
+        <li>单格法宝会给每个同属性的相邻法宝提供百分比伤害加成。</li>
+        <li>所有四格及以上法宝每相邻一个同属性的不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
+        <li>法宝可拥有多个属性；双方只要共享任意一个属性就生效，同一对法宝只计算一次，不会因共享多个属性重复叠加。</li>
         <li>开启“自身受加成”的红色三格物品按自身邻接规则计算；未开启的三格物品不因相邻物品给自身加成。</li>
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
         <li>融合求解器会保留原有完整装入优先、BigInt 位掩码、单格延迟分配与字典序评分，并在完整方案上追加 LNS（局部摧毁 + 精确修复）搜索。</li>
       </ol>
-      <p class="hint">重点邻接与总邻接均按“相邻的不同法宝”计算，同一对法宝即使接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、总邻接数量。默认格数优先级为五格及以上 ＞ 四格 ＞ 三格 ＞ 两格 ＞ 单格。</p>
+      <p class="hint">重点邻接与有效邻接均按“共享至少一个属性的相邻法宝”计算，同一对法宝即使共享多个属性或接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。默认格数优先级为五格及以上 ＞ 四格 ＞ 三格 ＞ 两格 ＞ 单格。</p>
     </div>
   </section>
 </main>
+<dialog id="attributeDialog" class="attribute-dialog" aria-labelledby="attributeDialogTitle">
+  <div class="attribute-dialog-body">
+    <h3 id="attributeDialogTitle">设置法宝属性</h3>
+    <div id="attributeDialogItem" class="hint"></div>
+    <label style="display:block;margin:10px 0 0">属性名称（可填写多个）
+      <input id="attributeInput" type="text" placeholder="例如：火, 雷；或 攻击, 暴击">
+    </label>
+    <div class="hint">使用逗号、顿号、斜杠或空格分隔。至少保留一个属性；双方有任意共同属性时，相邻加成只计算一次。</div>
+    <div class="attribute-dialog-actions">
+      <button id="attributeCancelBtn" type="button">取消</button>
+      <button id="attributeSaveBtn" type="button" class="primary">保存属性</button>
+    </div>
+  </div>
+</dialog>
 <script>
 'use strict';
 
@@ -464,6 +487,7 @@ const AREA_VALUE_BY_QUALITY = {
   5:{red:64}
 };
 const SINGLE_RATE_BY_QUALITY = {green:5, blue:8, purple:12, gold:16};
+const DEFAULT_ATTRIBUTE = '通用';
 // 默认邻接优先级只看占用格数：格数越多，越优先获得更多不同邻居。
 const SELF_PRIORITY_TIERS = [
   {id:'area_5_plus', label:'五格及以上'},
@@ -480,7 +504,7 @@ let inventory = [];
 let nextItemNo = 1;
 let lastResult = null;
 let retainedBestRecord = null;
-const RETAINED_BEST_STORAGE_KEY = 'bagSolverRetainedBestV2';
+const RETAINED_BEST_STORAGE_KEY = 'bagSolverRetainedBestV3';
 let solverWorker = null;
 let solverWorkers = [];
 let solverStatusTimer = null;
@@ -498,6 +522,7 @@ const RECOGNITION_QUALITY_ORDER = ['green','blue','purple','gold','red'];
 const RECOGNITION_SEED_RECT = {x:0.076, y:0.486, w:0.847, h:0.322};
 let recognitionState = createRecognitionState();
 let replacementResult = null;
+let attributeEditorIndex = -1;
 
 const DEFAULT_ITEMS = [
   {id:'one-1', name:'单格', cells:[[0,0]], quality:'purple', enabled:true},
@@ -577,6 +602,26 @@ function qualityValue(q, area=1){
 }
 function qualityName(q){ return (QUALITY_MAP[q] || QUALITY_MAP.green).name; }
 function qualityLabel(q, area){ return `${qualityName(q)}(${qualityValue(q, area)})`; }
+function normalizeAttributes(input){
+  const raw = Array.isArray(input) ? input : typeof input === 'string' ? input.split(/[,，、/|\s]+/) : [];
+  const result = [], seen = new Set();
+  for(const value of raw){
+    const name = String(value ?? '').trim().slice(0,20);
+    if(!name) continue;
+    const key = name.toLocaleLowerCase('zh-CN');
+    if(seen.has(key)) continue;
+    seen.add(key);
+    result.push(name);
+    if(result.length >= 8) break;
+  }
+  return result.length ? result : [DEFAULT_ATTRIBUTE];
+}
+function sharedAttributes(a,b){
+  const right = new Set(normalizeAttributes(b?.attributes).map(x=>x.toLocaleLowerCase('zh-CN')));
+  return normalizeAttributes(a?.attributes).filter(x=>right.has(x.toLocaleLowerCase('zh-CN')));
+}
+function hasSharedAttribute(a,b){ return sharedAttributes(a,b).length > 0; }
+function attributeLabel(item){ return normalizeAttributes(item?.attributes).join(' / '); }
 function defaultBonusRate(area, quality, threeSelfBonus){
   const q = normalizeQualityForArea(quality, area);
   if(area === 1) return SINGLE_RATE_BY_QUALITY[q] ?? 0;
@@ -600,7 +645,8 @@ function normalizeItemRecord(item, keepManualRate=false){
   }
   // 加成率不再作为用户输入项，统一由格数、品质和三格开关推导。
   let bonusRate = defaultBonusRate(area, quality, threeSelfBonus);
-  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, customPriority, enabled:item.enabled !== false};
+  const attributes = normalizeAttributes(item.attributes);
+  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, customPriority, attributes, enabled:item.enabled !== false};
 }
 function init(){
   active = Array.from({length:6},()=>Array(7).fill(true));
@@ -687,6 +733,14 @@ function bindEvents(){
     lastResult = null;
     renderResultGrid(null);
   });
+  document.getElementById('attributeCancelBtn').addEventListener('click', closeAttributeDialog);
+  document.getElementById('attributeSaveBtn').addEventListener('click', saveAttributeDialog);
+  document.getElementById('attributeInput').addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      saveAttributeDialog();
+    }
+  });
   document.getElementById('customQuality').addEventListener('change', e=>{
     const q = e.target.value;
     const cells = parsePattern(document.getElementById('customPattern').value || '#');
@@ -767,6 +821,7 @@ function updateTableColumnLayout(){
     if(id==='inventoryTable'){
       const tracks=visibleHeaders.map(th=>{
         if(th.classList.contains('col-bonus-control')) return '1.8fr';
+        if(th.classList.contains('col-attributes')) return '1.5fr';
         if(th.classList.contains('col-name')) return '1.25fr';
         if(th.classList.contains('col-no') || th.classList.contains('col-action')) return '.8fr';
         return '1fr';
@@ -870,7 +925,7 @@ function renderInventoryTable(){
   inventory = inventory.map(x=>normalizeItemRecord(x, true));
   if(inventory.length === 0){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="col-empty" colspan="9"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
+    tr.innerHTML = `<td class="col-empty" colspan="10"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
     tbody.appendChild(tr);
     updateTableColumnLayout();
     renderInventoryCellSummary();
@@ -885,6 +940,7 @@ function renderInventoryTable(){
       <td class="col-name" data-label="名称"><input class="name-input" type="text" data-inv-k="name" data-i="${idx}" value="${escapeAttr(it.name)}"></td>
       <td class="col-shape" data-label="形状"></td>
       <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area)}</td>
+      <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="attribute-chip">${escapeHtml(x)}</span>`).join('')}<button class="compact" type="button" data-attr-edit="${idx}">多属性</button></div></td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -933,8 +989,37 @@ function renderInventoryTable(){
       renderResultGrid(null);
     });
   });
+  tbody.querySelectorAll('button[data-attr-edit]').forEach(btn=>{
+    btn.addEventListener('click', e=>openAttributeDialog(Number(e.currentTarget.dataset.attrEdit)));
+  });
   updateTableColumnLayout();
   renderInventoryCellSummary();
+}
+
+function openAttributeDialog(index){
+  if(!inventory[index]) return;
+  attributeEditorIndex = index;
+  const item = inventory[index];
+  document.getElementById('attributeDialogItem').textContent = `#${item.no} ${item.name}`;
+  document.getElementById('attributeInput').value = normalizeAttributes(item.attributes).join(', ');
+  const dialog = document.getElementById('attributeDialog');
+  if(typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open','');
+  requestAnimationFrame(()=>document.getElementById('attributeInput').focus());
+}
+function closeAttributeDialog(){
+  attributeEditorIndex = -1;
+  const dialog = document.getElementById('attributeDialog');
+  if(typeof dialog.close === 'function') dialog.close();
+  else dialog.removeAttribute('open');
+}
+function saveAttributeDialog(){
+  if(!inventory[attributeEditorIndex]){ closeAttributeDialog(); return; }
+  inventory[attributeEditorIndex].attributes = normalizeAttributes(document.getElementById('attributeInput').value);
+  lastResult = null;
+  closeAttributeDialog();
+  renderInventoryTable();
+  renderResultGrid(null);
 }
 
 function renderInventoryCellSummary(){
@@ -995,6 +1080,7 @@ function priorityGainFor(newPlacement, existingPlacements){
   const links = [];
   for(const old of existingPlacements){
     if(!areAdjacent(newPlacement.cells, old.cells)) continue;
+    if(!hasSharedAttribute(newPlacement, old)) continue;
     if(newPlacement.priorityTier >= 0){
       vector[newPlacement.priorityTier]++;
       links.push({target:newPlacement.no, targetName:newPlacement.itemName, neighbor:old.no, neighborName:old.itemName, tier:newPlacement.priorityTier});
@@ -1021,6 +1107,7 @@ function addToInventory(defIndex, count){
       quality: def.quality,
       value: def.value,
       bonusRate: def.bonusRate,
+      attributes: normalizeAttributes(def.attributes),
       threeSelfBonus: !!def.threeSelfBonus,
       customPriority: null
     }, true));
@@ -2807,6 +2894,7 @@ function prepareInventoryItems(){
       value: Math.max(0, Number(inv.value)||0),
       bonusRate: Math.max(0, Number(inv.bonusRate)||0),
       bonusKind: kind,
+      attributes: normalizeAttributes(inv.attributes),
       priorityTier: -1,
       customPriority: inv.customPriority ?? null,
       manualOrder: -1,
@@ -2828,7 +2916,7 @@ function prepareInventoryItems(){
           if(ok && !placeMap.has(m.toString())){
             placeMap.set(m.toString(), {
               mask:m, cells:abs, uid:base.uid, no:base.no, itemName:base.name, typeName:base.typeName,
-              area:base.area, quality:base.quality, value:base.value, bonusRate:base.bonusRate, bonusKind:base.bonusKind, priorityTier:base.priorityTier, customPriority:base.customPriority, manualOrder:-1, itemIndex:-1
+              area:base.area, quality:base.quality, value:base.value, bonusRate:base.bonusRate, bonusKind:base.bonusKind, attributes:base.attributes, priorityTier:base.priorityTier, customPriority:base.customPriority, manualOrder:-1, itemIndex:-1
             });
           }
         }
@@ -2872,18 +2960,20 @@ function areAdjacent(cellsA, cellsB){
 }
 function pairBonusEvents(a, b){
   if(!areAdjacent(a.cells, b.cells)) return [];
+  const matchedAttributes = sharedAttributes(a,b);
+  if(!matchedAttributes.length) return [];
   const events = [];
   if(a.bonusKind === 'provider' && a.bonusRate > 0){
-    events.push({kind:'single_provider', source:a.no, sourceName:a.itemName, target:b.no, targetName:b.itemName, rate:a.bonusRate, base:b.value, bonus:b.value*a.bonusRate/100});
+    events.push({kind:'single_provider', source:a.no, sourceName:a.itemName, target:b.no, targetName:b.itemName, matchedAttributes, rate:a.bonusRate, base:b.value, bonus:b.value*a.bonusRate/100});
   }
   if(b.bonusKind === 'provider' && b.bonusRate > 0){
-    events.push({kind:'single_provider', source:b.no, sourceName:b.itemName, target:a.no, targetName:a.itemName, rate:b.bonusRate, base:a.value, bonus:a.value*b.bonusRate/100});
+    events.push({kind:'single_provider', source:b.no, sourceName:b.itemName, target:a.no, targetName:a.itemName, matchedAttributes, rate:b.bonusRate, base:a.value, bonus:a.value*b.bonusRate/100});
   }
   if(a.bonusKind === 'self' && a.bonusRate > 0){
-    events.push({kind:'self_neighbor', source:a.no, sourceName:a.itemName, target:a.no, targetName:a.itemName, neighbor:b.no, neighborName:b.itemName, rate:a.bonusRate, base:a.value, bonus:a.value*a.bonusRate/100});
+    events.push({kind:'self_neighbor', source:a.no, sourceName:a.itemName, target:a.no, targetName:a.itemName, neighbor:b.no, neighborName:b.itemName, matchedAttributes, rate:a.bonusRate, base:a.value, bonus:a.value*a.bonusRate/100});
   }
   if(b.bonusKind === 'self' && b.bonusRate > 0){
-    events.push({kind:'self_neighbor', source:b.no, sourceName:b.itemName, target:b.no, targetName:b.itemName, neighbor:a.no, neighborName:a.itemName, rate:b.bonusRate, base:b.value, bonus:b.value*b.bonusRate/100});
+    events.push({kind:'self_neighbor', source:b.no, sourceName:b.itemName, target:b.no, targetName:b.itemName, neighbor:a.no, neighborName:a.itemName, matchedAttributes, rate:b.bonusRate, base:b.value, bonus:b.value*b.bonusRate/100});
   }
   return events.filter(e=>e.bonus > 0);
 }
@@ -2896,8 +2986,8 @@ function adjacencyGainFor(newPlacement, existingPlacements){
   return gain;
 }
 function potentialPairBonus(itemA, itemB){
-  const a = {cells:[[0,0]], no:itemA.no, itemName:itemA.name, value:itemA.value, bonusRate:itemA.bonusRate, bonusKind:itemA.bonusKind};
-  const b = {cells:[[0,1]], no:itemB.no, itemName:itemB.name, value:itemB.value, bonusRate:itemB.bonusRate, bonusKind:itemB.bonusKind};
+  const a = {cells:[[0,0]], no:itemA.no, itemName:itemA.name, value:itemA.value, bonusRate:itemA.bonusRate, bonusKind:itemA.bonusKind, attributes:itemA.attributes};
+  const b = {cells:[[0,1]], no:itemB.no, itemName:itemB.name, value:itemB.value, bonusRate:itemB.bonusRate, bonusKind:itemB.bonusKind, attributes:itemB.attributes};
   return pairBonusEvents(a,b).reduce((s,e)=>s+e.bonus,0);
 }
 function maxPossibleBonus(items){
@@ -2934,7 +3024,7 @@ function solverWorkerMain(){
     function itemsHashSeed(rawItems){
       let h=2166136261>>>0;
       for(const t of rawItems){
-        const text=`${t.no}|${t.area}|${t.value}|${t.bonusRate}|${t.bonusKind}|${t.customPriority ?? ''}`;
+        const text=`${t.no}|${t.area}|${t.value}|${t.bonusRate}|${t.bonusKind}|${(t.attributes||[]).join(',')}|${t.customPriority ?? ''}`;
         for(let i=0;i<text.length;i++){ h^=text.charCodeAt(i); h=Math.imul(h,16777619)>>>0; }
       }
       return h>>>0;
@@ -2977,20 +3067,30 @@ function solverWorkerMain(){
     }));
 
     function areAdjacent(a,b){ return (a.neighborMask & b.mask) !== 0n; }
+    function normalizedAttributes(item){
+      return Array.isArray(item && item.attributes) && item.attributes.length ? item.attributes.map(x=>String(x).trim()).filter(Boolean) : ['通用'];
+    }
+    function sharedAttributes(a,b){
+      const right=new Set(normalizedAttributes(b).map(x=>x.toLocaleLowerCase('zh-CN')));
+      return normalizedAttributes(a).filter(x=>right.has(x.toLocaleLowerCase('zh-CN')));
+    }
+    function hasSharedAttribute(a,b){ return sharedAttributes(a,b).length>0; }
     function pairBonusEvents(a,b){
       if(!areAdjacent(a,b)) return [];
+      const matchedAttributes=sharedAttributes(a,b);
+      if(!matchedAttributes.length) return [];
       const events = [];
       if(a.bonusKind === 'provider' && a.bonusRate > 0){
-        events.push({kind:'single_provider', source:a.no, sourceName:a.itemName, target:b.no, targetName:b.itemName, rate:a.bonusRate, base:b.value, bonus:b.value*a.bonusRate/100});
+        events.push({kind:'single_provider', source:a.no, sourceName:a.itemName, target:b.no, targetName:b.itemName, matchedAttributes, rate:a.bonusRate, base:b.value, bonus:b.value*a.bonusRate/100});
       }
       if(b.bonusKind === 'provider' && b.bonusRate > 0){
-        events.push({kind:'single_provider', source:b.no, sourceName:b.itemName, target:a.no, targetName:a.itemName, rate:b.bonusRate, base:a.value, bonus:a.value*b.bonusRate/100});
+        events.push({kind:'single_provider', source:b.no, sourceName:b.itemName, target:a.no, targetName:a.itemName, matchedAttributes, rate:b.bonusRate, base:a.value, bonus:a.value*b.bonusRate/100});
       }
       if(a.bonusKind === 'self' && a.bonusRate > 0){
-        events.push({kind:'self_neighbor', source:a.no, sourceName:a.itemName, target:a.no, targetName:a.itemName, neighbor:b.no, neighborName:b.itemName, rate:a.bonusRate, base:a.value, bonus:a.value*a.bonusRate/100});
+        events.push({kind:'self_neighbor', source:a.no, sourceName:a.itemName, target:a.no, targetName:a.itemName, neighbor:b.no, neighborName:b.itemName, matchedAttributes, rate:a.bonusRate, base:a.value, bonus:a.value*a.bonusRate/100});
       }
       if(b.bonusKind === 'self' && b.bonusRate > 0){
-        events.push({kind:'self_neighbor', source:b.no, sourceName:b.itemName, target:b.no, targetName:b.itemName, neighbor:a.no, neighborName:a.itemName, rate:b.bonusRate, base:b.value, bonus:b.value*b.bonusRate/100});
+        events.push({kind:'self_neighbor', source:b.no, sourceName:b.itemName, target:b.no, targetName:b.itemName, neighbor:a.no, neighborName:a.itemName, matchedAttributes, rate:b.bonusRate, base:b.value, bonus:b.value*b.bonusRate/100});
       }
       return events.filter(x=>x.bonus>0);
     }
@@ -3002,6 +3102,7 @@ function solverWorkerMain(){
       return out;
     }
     function potentialPairBonus(a,b){
+      if(!hasSharedAttribute(a,b)) return 0;
       let bonus=0;
       if(a.bonusKind==='provider' && a.bonusRate>0) bonus += b.value*a.bonusRate/100;
       if(b.bonusKind==='provider' && b.bonusRate>0) bonus += a.value*b.bonusRate/100;
@@ -3035,6 +3136,7 @@ function solverWorkerMain(){
       const links = [];
       for(const old of placed){
         if(!areAdjacent(p,old)) continue;
+        if(!hasSharedAttribute(p,old)) continue;
         targetPriorityGain(p,old,manualVector,defaultVector,links);
         targetPriorityGain(old,p,manualVector,defaultVector,links);
       }
@@ -3060,6 +3162,7 @@ function solverWorkerMain(){
         value:item.value,
         bonusRate:item.bonusRate,
         bonusKind:item.bonusKind,
+        attributes:item.attributes,
         priorityTier:item.priorityTier,
         customPriority:item.customPriority,
         manualOrder:item.manualOrder,
@@ -3077,7 +3180,7 @@ function solverWorkerMain(){
     // 无法全部装入时仍需决定取舍，因此部分装入阶段保留原来的完整评分签名。
     function detailedGroupKey(t){
       const masks = t.placements.map(p=>p.mask.toString()).sort().join(',');
-      return [masks,t.area,t.quality,t.value,t.bonusRate,t.bonusKind,t.priorityTier,t.manualOrder,t.customPriority===null?'':t.customPriority].join('|');
+      return [masks,t.area,t.quality,t.value,t.bonusRate,t.bonusKind,(t.attributes||[]).map(x=>String(x).toLocaleLowerCase('zh-CN')).sort().join(','),t.priorityTier,t.manualOrder,t.customPriority===null?'':t.customPriority].join('|');
     }
     function guideInfluence(t){
       if(t.bonusKind==='self') return t.value*t.bonusRate;
@@ -3142,7 +3245,7 @@ function solverWorkerMain(){
     const fullGroupByUid = new Map();
     for(const g of fullGroups) for(const item of g.items) fullGroupByUid.set(String(item.uid),g);
 
-    // 严格字典序：完整装入 > 实际总属性 > 手动优先级 > 默认优先级 > 总邻接数量。
+    // 严格字典序：完整装入 > 实际总属性 > 手动优先级 > 默认优先级 > 有效同属性邻接数量。
     // 后续字段只用于完全平局时保持结果稳定，不改变上述优化顺序。
     function compareEvaluationObjects(a,b){
       const ac=!!a.complete, bc=!!b.complete;
@@ -3176,6 +3279,7 @@ function solverWorkerMain(){
       for(let i=0;i<placements.length;i++) for(let j=i+1;j<placements.length;j++){
         const a=placements[i], b=placements[j];
         if(!areAdjacent(a,b)) continue;
+        if(!hasSharedAttribute(a,b)) continue;
         adjacencyCount++;
         targetPriorityGain(a,b,manualVector,defaultVector,priorityLinks);
         targetPriorityGain(b,a,manualVector,defaultVector,priorityLinks);
@@ -3190,7 +3294,7 @@ function solverWorkerMain(){
         placements:placements.slice(),occupied,bonusEvents,priorityLinks
       };
     }
-    function scoringSignature(t){ return [t.value,t.bonusRate,t.bonusKind,t.quality].join('|'); }
+    function scoringSignature(t){ return [t.value,t.bonusRate,t.bonusKind,t.quality,(t.attributes||[]).map(x=>String(x).toLocaleLowerCase('zh-CN')).sort().join(',')].join('|'); }
     function uniquePermutations(arr,limit=720){
       const out=[], used=Array(arr.length).fill(false), cur=[];
       const sorted=arr.slice().sort((a,b)=>scoringSignature(a).localeCompare(scoringSignature(b)) || a.no-b.no);
@@ -3826,7 +3930,7 @@ function solverWorkerMain(){
             const nextOcc=occupied|p.mask;
             const depthRatio=fullCoreItemCount?depth/fullCoreItemCount:1;
             const opp=depthRatio>0.25?singletonOpportunityProxy(nextOcc,placed.concat(p)):0;
-            const compact=placed.reduce((n,old)=>n+(areAdjacent(p,old)?1:0),0);
+            const compact=placed.reduce((n,old)=>n+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
             const baseScore=bg.bonus+Math.max(0,opp)*(0.15+0.55*depthRatio)+compact*0.01;
             scored.push({pi,p,score:baseScore*(0.92+rand()*0.20)+rand()*Math.max(1,Math.abs(baseScore)*0.03)});
           }
@@ -3867,7 +3971,7 @@ function solverWorkerMain(){
           const p=instantiate(group.templates[pi],item,group);
           const pg=priorityGainFor(p,placed);
           const bg=useBonus?adjacencyGainFor(p,placed):{bonus:0,events:[]};
-          const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)?1:0),0);
+          const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
           const nextOcc=occupied|p.mask;
           const depthRatio=fullCoreItemCount?depth/fullCoreItemCount:1;
           const singletonOpp=depthRatio>0.20?singletonOpportunityProxy(nextOcc,placed.concat(p)):0;
@@ -3931,7 +4035,7 @@ function solverWorkerMain(){
           const p=instantiate(group.templates[pi],item,group);
           const pg=priorityGainFor(p,placed);
           const bg=useBonus?adjacencyGainFor(p,placed):{bonus:0,events:[]};
-          const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)?1:0),0);
+          const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
           scored.push({pi,p,pg,bg,compact,totalGain:p.value+bg.bonus});
         }
         scored.sort((a,b)=>{
@@ -4032,7 +4136,7 @@ function renderLiveSolverStatus(){
 当前最好实际总伤害：${bestKnown?formatNum(s.bestTotal):'尚未形成可评分方案'}
 当前最好基础值：${bestKnown?formatNum(s.bestBase):'-'}
 当前最好相邻加成：${bestKnown?formatNum(s.bestBonus):'-'}
-当前最好总邻接数量：${bestKnown?(s.bestAdjacency ?? 0):'-'}
+当前最好有效同属性邻接：${bestKnown?(s.bestAdjacency ?? 0):'-'}
 当前放入物品：${s.bestItems ?? 0}/${s.totalItems ?? inventory.length}
 当前空间利用：${Math.max(0,Number(s.bestArea)||0)}/${s.activeCells}
 ${s.restarts ? `多起点尝试：${s.restarts}\n` : ''}
@@ -4118,7 +4222,7 @@ function compareSolverBest(a,b){
 
 function buildProblemSignature(){
   return JSON.stringify({
-    version:1,
+    version:2,
     W,H,active,
     allowRotate:document.getElementById('allowRotate').checked,
     allowMirror:document.getElementById('allowMirror').checked,
@@ -4132,6 +4236,7 @@ function buildProblemSignature(){
       quality:item.quality || 'green',
       value:Number(item.value) || 0,
       bonusRate:Number(item.bonusRate) || 0,
+      attributes:normalizeAttributes(item.attributes),
       threeSelfBonus:!!item.threeSelfBonus,
       customPriority:item.customPriority === null || item.customPriority === undefined ? null : Number(item.customPriority)
     }))
@@ -4188,7 +4293,7 @@ function describeSolutionDifference(current, previous){
   const defaultCmp=compareNoticeVectors(current.defaultPriorityVector,previous.defaultPriorityVector);
   if(defaultCmp!==0) return `实际总伤害相同，但本次默认格数优先级结果${defaultCmp>0?'更好':'更差'}。`;
   const adjacencyDelta=(Number(current.adjacencyCount)||0)-(Number(previous.adjacencyCount)||0);
-  if(adjacencyDelta!==0) return `前述指标相同，本次总邻接数量${adjacencyDelta>0?'更多':'更少'} ${Math.abs(adjacencyDelta)} 对。`;
+  if(adjacencyDelta!==0) return `前述指标相同，本次有效同属性邻接${adjacencyDelta>0?'更多':'更少'} ${Math.abs(adjacencyDelta)} 对。`;
   return '两次方案按当前全部比较规则评价持平。';
 }
 
@@ -4363,13 +4468,13 @@ function renderResultGrid(best){
     best.placements.forEach((p)=>{
       const style = qualityDisplayStyle(p.quality);
       legends.push({
-        label:`#${p.no} ${qualityName(p.quality)}｜${p.itemName}`,
+        label:`#${p.no} ${qualityName(p.quality)}｜${p.itemName}｜${attributeLabel(p)}`,
         fill:style.fill,
         border:style.border
       });
       p.cells.forEach(([r,c])=>cellMap.set(`${r},${c}`, {
         no:String(p.no), label:p.no, fill:style.fill, border:style.border, text:style.text,
-        name:p.itemName, quality:p.quality
+        name:p.itemName, quality:p.quality, attributes:p.attributes
       }));
     });
   }
@@ -4384,7 +4489,7 @@ function renderResultGrid(best){
           div.textContent = x.label;
           div.style.background = x.fill;
           div.style.color = x.text;
-          div.title = `#${x.no} ${qualityName(x.quality)}｜${x.name}`;
+          div.title = `#${x.no} ${qualityName(x.quality)}｜${x.name}｜属性：${attributeLabel(x)}`;
 
           // 同一装备内部只保留细分格线，装备外缘使用更明显的品质色边界。
           const sameTop = cellMap.get(`${r-1},${c}`)?.no === x.no;
@@ -4426,7 +4531,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   document.getElementById('statItems').textContent = best.itemCount;
   document.getElementById('statNodes').textContent = nodes.toLocaleString('zh-CN');
   const unused = activeCells - best.area;
-  const list = best.placements.map((p)=>`#${p.no} ${p.itemName}｜${qualityName(p.quality)}｜${p.area}格｜基础值 ${formatNum(p.value)}｜${p.customPriority !== null && p.customPriority !== undefined ? `手动邻接优先级 ${p.customPriority}` : '默认邻接规则'}｜${bonusDescription(p)}｜坐标 ${p.cells.map(([r,c])=>`(${r+1},${c+1})`).join(' ')}`).join('\n') || '未放入任何物品。';
+  const list = best.placements.map((p)=>`#${p.no} ${p.itemName}｜${qualityName(p.quality)}｜${p.area}格｜属性 ${attributeLabel(p)}｜基础值 ${formatNum(p.value)}｜${p.customPriority !== null && p.customPriority !== undefined ? `手动邻接优先级 ${p.customPriority}` : '默认邻接规则'}｜${bonusDescription(p)}｜坐标 ${p.cells.map(([r,c])=>`(${r+1},${c+1})`).join(' ')}`).join('\n') || '未放入任何物品。';
   const eventList = best.bonusEvents.length ? best.bonusEvents.map(eventLine).join('\n') : '无有效相邻加成。';
   const prioritySummary = buildPrioritySummary(best);
   const skippedText = skipped && skipped.length ? `\n\n未参与搜索（单件在当前空间/方向规则下没有任何合法位置）：\n${skipped.map(x=>`#${x.no} ${x.name}`).join('\n')}` : '';
@@ -4447,16 +4552,17 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   }else{
     conclusion = stopped ? '搜索达到上限，返回当前最好方案。' : '搜索完成。';
   }
-  let singleSingleAdj=0, singleMultiAdj=0, multiMultiAdj=0;
+  let singleSingleAdj=0, singleMultiAdj=0, multiMultiAdj=0, differentAttributeAdj=0;
   for(let i=0;i<best.placements.length;i++) for(let j=i+1;j<best.placements.length;j++){
     const a=best.placements[i], b=best.placements[j];
     if(!areAdjacent(a.cells,b.cells)) continue;
+    if(!hasSharedAttribute(a,b)){ differentAttributeAdj++; continue; }
     const as=a.area===1, bs=b.area===1;
     if(as&&bs) singleSingleAdj++;
     else if(as||bs) singleMultiAdj++;
     else multiMultiAdj++;
   }
-  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 相邻加成）＞ 手动指定法宝邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 总邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n总邻接数量：${best.adjacencyCount ?? 0} 对不同法宝\n邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
+  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
 function buildPrioritySummary(best){
   const countByItem = new Map();
@@ -4479,13 +4585,14 @@ function buildPrioritySummary(best){
   if(!rows.length) return '当前没有可参与邻接优先级比较的法宝。';
   return rows.map(x=>{
     const label = x.mode === 'custom' ? `手动优先级 ${x.customPriority}` : SELF_PRIORITY_TIERS[x.tier].label;
-    return `[${label}] #${x.no} ${x.name}：${x.count} 个不同邻居`;
+    return `[${label}] #${x.no} ${x.name}：${x.count} 个同属性邻居`;
   }).join('\n');
 }
 
 function eventLine(e){
-  if(e.kind === 'single_provider') return `单格 #${e.source} ${e.sourceName} → #${e.target} ${e.targetName}：${formatNum(e.base)} × ${formatNum(e.rate)}% = +${formatNum(e.bonus)}`;
-  if(e.kind === 'self_neighbor') return `#${e.target} ${e.targetName} 因相邻 #${e.neighbor} ${e.neighborName} 自身加成：${formatNum(e.base)} × ${formatNum(e.rate)}% = +${formatNum(e.bonus)}`;
+  const matched = Array.isArray(e.matchedAttributes) && e.matchedAttributes.length ? `（共同属性：${e.matchedAttributes.join(' / ')}）` : '';
+  if(e.kind === 'single_provider') return `单格 #${e.source} ${e.sourceName} → #${e.target} ${e.targetName}${matched}：${formatNum(e.base)} × ${formatNum(e.rate)}% = +${formatNum(e.bonus)}`;
+  if(e.kind === 'self_neighbor') return `#${e.target} ${e.targetName} 因相邻 #${e.neighbor} ${e.neighborName}${matched} 自身加成：${formatNum(e.base)} × ${formatNum(e.rate)}% = +${formatNum(e.bonus)}`;
   return `+${formatNum(e.bonus)}`;
 }
 
