@@ -41,8 +41,26 @@
   .grid{display:grid;gap:0;border:1px solid #111827;width:max-content;background:#111827}
   .cell{width:var(--cell);height:var(--cell);border:1px solid #111827;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;user-select:none;position:relative}
   .cell.inactive{background:#e5e7eb;color:#9ca3af}
-  #resultGrid .cell{border-color:#cbd5e1;background:#fff;color:#111827}
+  #resultGrid .cell{border-color:#cbd5e1;background:#fff;color:#111827;overflow:hidden}
   #resultGrid .cell.item-cell{font-size:13px;font-weight:800;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+  #resultGrid .cell.item-cell .item-no{position:relative;z-index:1}
+  #resultGrid .cell.item-cell .attr-mark{
+    position:absolute;top:0;left:0;z-index:2;padding:1px 3px 2px;
+    font-size:9px;line-height:1;font-weight:800;letter-spacing:0;
+    border-bottom-right-radius:5px;text-shadow:none;pointer-events:none;
+  }
+  #resultGrid .cell.item-cell.attr-primary .attr-mark{background:#1d4ed8;color:#fff}
+  #resultGrid .cell.item-cell.attr-secondary .attr-mark{background:#be185d;color:#fff}
+  #resultGrid .cell.item-cell.attr-secondary::after{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:repeating-linear-gradient(-45deg,rgba(190,24,93,.28) 0 5px,transparent 5px 10px);
+  }
+  .attribute-grid-key{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px;font-size:12px;color:#475569}
+  .attribute-grid-key .attr-key{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-weight:700}
+  .attribute-grid-key .attr-key.primary{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}
+  .attribute-grid-key .attr-key.secondary{border-color:#f9a8d4;background:#fdf2f8;color:#9d174d}
+  .attribute-chip.primary{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}
+  .attribute-chip.secondary{border-color:#f9a8d4;background:#fdf2f8;color:#9d174d}
   #spaceGrid .cell{cursor:pointer}
   #spaceGrid .cell:hover{outline:2px solid var(--accent);z-index:2}
   .mini{display:grid;gap:0;border:1px solid #374151;background:#374151;width:max-content;transform-origin:left top}
@@ -62,7 +80,7 @@
   .pill.gray{border-color:#e5e7eb;background:#f9fafb;color:#6b7280}
   .pill.green{border-color:#bbf7d0;background:#f0fdf4;color:#166534}
   .attribute-cell{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
-  .attribute-chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;white-space:nowrap}
+  .attribute-chip{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:12px;white-space:nowrap;font-weight:700}
   .attribute-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}
   .attribute-settings .mode-check{font-weight:700;color:#1e293b}
   .attribute-role-list{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
@@ -222,6 +240,7 @@
     .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     .recognition-preview-wrap{padding:6px}
     .semi-candidates{grid-template-columns:1fr}
+    #resultGrid .cell.item-cell .attr-mark{font-size:8px;padding:1px 2px}
   }
 </style>
 </head>
@@ -259,7 +278,7 @@
       <div class="attribute-settings">
         <label class="mode-check"><input id="multiAttributeMode" type="checkbox"> 多属性</label>
         <div class="attribute-role-list">
-          <span class="attribute-chip">主属性</span>
+          <span class="attribute-chip primary">主属性</span>
           <span id="secondaryAttributeChip" class="attribute-chip secondary" hidden>副属性</span>
         </div>
         <input id="primaryAttribute" type="hidden" value="主属性">
@@ -383,6 +402,10 @@
         <div class="result-main">
           <div class="result-grid-block">
             <div id="resultGrid" class="grid"></div>
+            <div id="attributeLegend" class="attribute-grid-key" hidden>
+              <span class="attr-key primary">主 主属性</span>
+              <span class="attr-key secondary">副 副属性（斜纹）</span>
+            </div>
             <div id="legend" class="legend"></div>
           </div>
           <div class="embedded-solver">
@@ -616,6 +639,19 @@ function sharedAttributes(a,b){
 }
 function hasSharedAttribute(a,b){ return sharedAttributes(a,b).length > 0; }
 function attributeLabel(item){ return normalizeAttributes(item?.attributes).join(' / '); }
+function itemAttributeRole(item){
+  const names = normalizeAttributes(item?.attributes).map(x=>x.toLocaleLowerCase('zh-CN'));
+  const secondary = secondaryAttributeName().toLocaleLowerCase('zh-CN');
+  const primary = primaryAttributeName().toLocaleLowerCase('zh-CN');
+  if(secondary && secondary !== primary && names.includes(secondary) && !names.includes(primary)) return 'secondary';
+  return 'primary';
+}
+function attributeChipClass(name){
+  const secondary = secondaryAttributeName().toLocaleLowerCase('zh-CN');
+  return String(name).toLocaleLowerCase('zh-CN') === secondary && secondary !== primaryAttributeName().toLocaleLowerCase('zh-CN')
+    ? 'attribute-chip secondary'
+    : 'attribute-chip primary';
+}
 function primaryAttributeName(){ return normalizeAttributes(document.getElementById('primaryAttribute')?.value || DEFAULT_ATTRIBUTE)[0]; }
 function secondaryAttributeName(){ return normalizeAttributes(document.getElementById('secondaryAttribute')?.value || '副属性')[0]; }
 function isMultiAttributeMode(){ return !!document.getElementById('multiAttributeMode')?.checked; }
@@ -630,7 +666,7 @@ function syncAttributeModeControls(){
 function addAttributeSelectHtml(item,idx){
   const role = normalizeAddAttributeRole(item.addAttributeRole);
   if(!isMultiAttributeMode()){
-    return `<span class="pill">主属性</span>`;
+    return `<span class="attribute-chip primary">主属性</span>`;
   }
   return `<select data-lib-k="addAttributeRole" data-i="${idx}"><option value="primary" ${role==='primary'?'selected':''}>主属性</option><option value="secondary" ${role==='secondary'?'selected':''}>副属性</option></select>`;
 }
@@ -750,6 +786,8 @@ function bindEvents(){
   document.getElementById('multiAttributeMode').addEventListener('change', ()=>{
     syncAttributeModeControls();
     renderItemsTable();
+    renderInventoryTable();
+    if(lastResult?.best) renderResultGrid(lastResult.best);
   });
   document.getElementById('primaryAttribute')?.addEventListener('change', renderItemsTable);
   document.getElementById('secondaryAttribute')?.addEventListener('change', renderItemsTable);
@@ -954,7 +992,7 @@ function renderInventoryTable(){
       <td class="col-name" data-label="名称"><input class="name-input" type="text" data-inv-k="name" data-i="${idx}" value="${escapeAttr(it.name)}"></td>
       <td class="col-shape" data-label="形状"></td>
       <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area)}</td>
-      <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="attribute-chip">${escapeHtml(x)}</span>`).join('')}</div></td>
+      <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="${attributeChipClass(x)}">${escapeHtml(x)}</span>`).join('')}</div></td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -4449,17 +4487,22 @@ function renderResultGrid(best){
   el.innerHTML = '';
   const cellMap = new Map();
   const legends = [];
+  const showAttributeMarks = isMultiAttributeMode();
+  const attributeLegend = document.getElementById('attributeLegend');
+  if(attributeLegend) attributeLegend.hidden = !showAttributeMarks;
   if(best && best.placements){
     best.placements.forEach((p)=>{
       const style = qualityDisplayStyle(p.quality);
+      const role = itemAttributeRole(p);
       legends.push({
-        label:`#${p.no} ${qualityName(p.quality)}｜${p.itemName}｜${attributeLabel(p)}`,
+        label:`#${p.no} ${qualityName(p.quality)}｜${p.itemName}｜${role==='secondary'?'副属性':'主属性'}`,
         fill:style.fill,
-        border:style.border
+        border:style.border,
+        role
       });
       p.cells.forEach(([r,c])=>cellMap.set(`${r},${c}`, {
         no:String(p.no), label:p.no, fill:style.fill, border:style.border, text:style.text,
-        name:p.itemName, quality:p.quality, attributes:p.attributes
+        name:p.itemName, quality:p.quality, attributes:p.attributes, role
       }));
     });
   }
@@ -4470,11 +4513,20 @@ function renderResultGrid(best){
       if(active[r][c]){
         const x = cellMap.get(`${r},${c}`);
         if(x){
-          div.classList.add('item-cell');
-          div.textContent = x.label;
+          div.classList.add('item-cell', x.role === 'secondary' ? 'attr-secondary' : 'attr-primary');
+          const no = document.createElement('span');
+          no.className = 'item-no';
+          no.textContent = x.label;
+          div.appendChild(no);
+          if(showAttributeMarks){
+            const mark = document.createElement('span');
+            mark.className = 'attr-mark';
+            mark.textContent = x.role === 'secondary' ? '副' : '主';
+            div.appendChild(mark);
+          }
           div.style.background = x.fill;
           div.style.color = x.text;
-          div.title = `#${x.no} ${qualityName(x.quality)}｜${x.name}｜属性：${attributeLabel(x)}`;
+          div.title = `#${x.no} ${qualityName(x.quality)}｜${x.name}｜${x.role==='secondary'?'副属性':'主属性'}`;
 
           // 同一装备内部只保留细分格线，装备外缘使用更明显的品质色边界。
           const sameTop = cellMap.get(`${r-1},${c}`)?.no === x.no;
@@ -4499,7 +4551,9 @@ function renderResultGrid(best){
   }).forEach(x=>{
     const t = document.createElement('span');
     t.className = 'tag';
-    t.innerHTML = `<span class="sw" style="background:${x.fill};border-color:${x.border}"></span>${escapeHtml(x.label)}`;
+    const roleClass = x.role === 'secondary' ? 'attribute-chip secondary' : 'attribute-chip primary';
+    const roleText = x.role === 'secondary' ? '副' : '主';
+    t.innerHTML = `<span class="sw" style="background:${x.fill};border-color:${x.border}"></span>${escapeHtml(x.label)} <span class="${roleClass}">${roleText}</span>`;
     legend.appendChild(t);
   });
 }
