@@ -41,17 +41,17 @@
   .grid{display:grid;gap:0;border:1px solid #111827;width:max-content;background:#111827}
   .cell{width:var(--cell);height:var(--cell);border:1px solid #111827;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;user-select:none;position:relative}
   .cell.inactive{background:#e5e7eb;color:#9ca3af}
-  #resultGrid .cell{border-color:#cbd5e1;background:#fff;color:#111827;overflow:hidden}
-  #resultGrid .cell.item-cell{font-size:13px;font-weight:800;text-shadow:0 1px 0 rgba(255,255,255,.65)}
-  #resultGrid .cell.item-cell .item-no{position:relative;z-index:1}
-  #resultGrid .cell.item-cell .attr-mark{
+  .result-view .grid .cell{border-color:#cbd5e1;background:#fff;color:#111827;overflow:hidden}
+  .result-view .grid .cell.item-cell{font-size:13px;font-weight:800;text-shadow:0 1px 0 rgba(255,255,255,.65)}
+  .result-view .grid .cell.item-cell .item-no{position:relative;z-index:1}
+  .result-view .grid .cell.item-cell .attr-mark{
     position:absolute;top:0;left:0;z-index:2;padding:1px 3px 2px;
     font-size:9px;line-height:1;font-weight:800;letter-spacing:0;
     border-bottom-right-radius:5px;text-shadow:none;pointer-events:none;
   }
-  #resultGrid .cell.item-cell.attr-primary .attr-mark{background:#1d4ed8;color:#fff}
-  #resultGrid .cell.item-cell.attr-secondary .attr-mark{background:#be185d;color:#fff}
-  #resultGrid .cell.item-cell.attr-secondary::after{
+  .result-view .grid .cell.item-cell.attr-primary .attr-mark{background:#1d4ed8;color:#fff}
+  .result-view .grid .cell.item-cell.attr-secondary .attr-mark{background:#be185d;color:#fff}
+  .result-view .grid .cell.item-cell.attr-secondary::after{
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
     background:repeating-linear-gradient(-45deg,rgba(190,24,93,.28) 0 5px,transparent 5px 10px);
   }
@@ -175,6 +175,13 @@
   .semi-candidate:hover{border-color:var(--accent)}
   .result-main{display:grid;grid-template-columns:auto minmax(320px,1fr);gap:24px;align-items:start;min-width:0}
   .result-grid-block{min-width:0}
+  .result-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;min-width:0}
+  .result-view{min-width:0;padding:12px;border:1px solid #dbe3ef;border-radius:12px;background:#fff}
+  .result-view h3{margin:0 0 4px;color:#1f2937}
+  .result-view .mode-note{color:#64748b;font-size:12px;margin-bottom:10px}
+  .mode-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;color:#475569;font-size:12px}
+  .mode-metrics span{padding:3px 7px;border-radius:999px;background:#f1f5f9}
+  .mode-metrics b{color:#111827}
   .embedded-solver{min-width:0;padding:14px;border:1px solid #dbe3ef;border-radius:12px;background:#f8fafc}
   .embedded-solver h3{margin:0 0 10px;padding-left:8px;border-left:4px solid var(--accent);font-size:15px;color:#1f2937}
   .embedded-solver .hint{line-height:1.65}
@@ -203,7 +210,7 @@
   }
   @media (max-width:899px){
     main{grid-template-columns:1fr}
-    .space-body,.output-wrap,.result-main,.recognition-layout{grid-template-columns:1fr}
+    .space-body,.output-wrap,.result-main,.result-views,.recognition-layout{grid-template-columns:1fr}
     .table-scroll{overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
     .table-scroll table,.table-scroll tbody,.table-scroll tr,.table-scroll td{touch-action:pan-y}
     .library-scroll,.inventory-scroll{max-height:none}
@@ -240,7 +247,7 @@
     .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     .recognition-preview-wrap{padding:6px}
     .semi-candidates{grid-template-columns:1fr}
-    #resultGrid .cell.item-cell .attr-mark{font-size:8px;padding:1px 2px}
+    .result-view .grid .cell.item-cell .attr-mark{font-size:8px;padding:1px 2px}
   }
 </style>
 </head>
@@ -400,13 +407,23 @@
       <h2>5. 自动搜索与当前最佳摆放结果</h2>
       <div class="output-wrap">
         <div class="result-main">
-          <div class="result-grid-block">
-            <div id="resultGrid" class="grid"></div>
-            <div id="attributeLegend" class="attribute-grid-key" hidden>
-              <span class="attr-key primary">主 主属性</span>
-              <span class="attr-key secondary">副 副属性（斜纹）</span>
-            </div>
-            <div id="legend" class="legend"></div>
+          <div class="result-views">
+            <article class="result-view">
+              <h3>五格红武优先</h3>
+              <div class="mode-note">先让五格红色法宝获得更多同属性邻居，再比较实际总伤害。</div>
+              <div id="resultGridRed" class="grid"></div>
+              <div id="attributeLegendRed" class="attribute-grid-key" hidden><span class="attr-key primary">主 主属性</span><span class="attr-key secondary">副 副属性（斜纹）</span></div>
+              <div id="legendRed" class="legend"></div>
+              <div class="mode-metrics"><span>红武目标邻接 <b id="redFocusMetric">-</b></span><span>总伤害 <b id="redScoreMetric">-</b></span><span>相邻加成 <b id="redBonusMetric">-</b></span></div>
+            </article>
+            <article class="result-view">
+              <h3>一格珠子优先</h3>
+              <div class="mode-note">先让一格珠子获得更多同属性邻居，再比较实际总伤害。</div>
+              <div id="resultGridBead" class="grid"></div>
+              <div id="attributeLegendBead" class="attribute-grid-key" hidden><span class="attr-key primary">主 主属性</span><span class="attr-key secondary">副 副属性（斜纹）</span></div>
+              <div id="legendBead" class="legend"></div>
+              <div class="mode-metrics"><span>珠子目标邻接 <b id="beadFocusMetric">-</b></span><span>总伤害 <b id="beadScoreMetric">-</b></span><span>相邻加成 <b id="beadBonusMetric">-</b></span></div>
+            </article>
           </div>
           <div class="embedded-solver">
             <h3>求解设置</h3>
@@ -426,7 +443,7 @@
               <label id="workerCountLabel" hidden>Worker 数量 <input id="workerCount" type="number" min="2" max="12" step="1" value="2"><span id="workerCountHint" class="hint"></span></label>
             </div>
             <div class="row">
-              <button id="solveBtn" class="primary">搜索更优摆放解</button>
+              <button id="solveBtn" class="primary">生成两套优先级摆放图</button>
               <button id="cancelSolveBtn" class="danger" disabled>停止计算</button>
               <button id="exportBtn">导出结果 JSON</button>
               <button id="saveBtn">保存当前配置</button>
@@ -437,16 +454,16 @@
         </div>
         <div class="result-summary">
           <div class="stats">
-            <div class="stat">实际总伤害<b id="statScore">-</b></div>
+            <div class="stat">红武优先总伤害<b id="statScore">-</b></div>
             <div class="stat">基础伤害<b id="statBase">-</b></div>
             <div class="stat">相邻加成<b id="statBonus">-</b></div>
             <div class="stat">优先法宝邻接<b id="statPriority">-</b></div>
-            <div class="stat">有效同属性邻接<b id="statAdjacency">-</b></div>
+            <div class="stat">红武目标邻接<b id="statAdjacency">-</b></div>
             <div class="stat">已用格子<b id="statArea">-</b></div>
             <div class="stat">已放物品<b id="statItems">-</b></div>
             <div class="stat">搜索节点<b id="statNodes">-</b></div>
-            <div class="stat">已保留最佳<b id="statBestScore">-</b></div>
-            <div class="stat">本次计算<b id="statRunScore">-</b></div>
+            <div class="stat">珠子优先总伤害<b id="statBestScore">-</b></div>
+            <div class="stat">珠子目标邻接<b id="statRunScore">-</b></div>
           </div>
           <div id="bestResultNotice" class="best-result-notice neutral">尚无已保留的最佳方案。完成一次计算后会自动保留同一配置下评价最高的方案。</div>
           <h3>状态</h3>
@@ -463,6 +480,7 @@
         <li>物品库默认单属性。需要第二种属性时勾选“多属性”，然后在操作前选择主属性或副属性。</li>
         <li>每种物品的“属性”默认都是主属性；勾选多属性后才可以改成副属性。</li>
         <li>物品库只显示添加数量；伤害和相邻加成由法宝格数、品质自动计算。</li>
+        <li>同品质下，法宝占用格数越多，基础属性越高。</li>
         <li>需要指定某件法宝优先获得更多邻居时，在“邻接优先级”中填写数字：1 最高；留空则格数越多优先级越高。</li>
         <li>单格法宝会给每个同属性的相邻法宝提供百分比伤害加成。</li>
         <li>所有四格及以上法宝每相邻一个同属性的不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
@@ -471,7 +489,7 @@
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
         <li>融合求解器会保留原有完整装入优先、BigInt 位掩码、单格延迟分配与字典序评分，并在完整方案上追加 LNS（局部摧毁 + 精确修复）搜索。</li>
       </ol>
-      <p class="hint">重点邻接与有效邻接均按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。默认格数优先级为五格及以上 ＞ 四格 ＞ 三格 ＞ 两格 ＞ 单格。</p>
+      <p class="hint">目标邻接与有效邻接均按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。两套图的比较顺序都是：完整装入、当前目标法宝的同属性邻居数量、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。红武图的目标是五格红色法宝，珠子图的目标是一格法宝。</p>
     </div>
   </section>
 </main>
@@ -522,7 +540,7 @@ let inventory = [];
 let nextItemNo = 1;
 let lastResult = null;
 let retainedBestRecord = null;
-const RETAINED_BEST_STORAGE_KEY = 'bagSolverRetainedBestV3';
+const RETAINED_BEST_STORAGE_KEY = 'bagSolverRetainedBestV4';
 let solverWorker = null;
 let solverWorkers = [];
 let solverStatusTimer = null;
@@ -787,7 +805,10 @@ function bindEvents(){
     syncAttributeModeControls();
     renderItemsTable();
     renderInventoryTable();
-    if(lastResult?.best) renderResultGrid(lastResult.best);
+    if(lastResult?.bestByMode){
+      renderResultGrid(lastResult.bestByMode.red_weapon,'red_weapon');
+      renderResultGrid(lastResult.bestByMode.single_bead,'single_bead');
+    }else if(lastResult?.best) renderResultGrid(lastResult.best);
   });
   document.getElementById('primaryAttribute')?.addEventListener('change', renderItemsTable);
   document.getElementById('secondaryAttribute')?.addEventListener('change', renderItemsTable);
@@ -3037,6 +3058,7 @@ function solverWorkerMain(){
     const nodeLimit = Math.max(1000, Number(data.nodeLimit)||2500000);
     const timeLimit = Math.max(100, Number(data.timeLimit)||20000);
     const useBonus = !!data.useBonus;
+    const priorityMode = data.priorityMode === 'single_bead' ? 'single_bead' : 'red_weapon';
     const manualCount = Number(data.manualCount)||0;
     const defaultTierCount = Number(data.defaultTierCount)||0;
     const requiredTotalItems = Math.max(0, Number(data.requiredTotalItems)||0);
@@ -3098,6 +3120,18 @@ function solverWorkerMain(){
       return normalizedAttributes(a).filter(x=>right.has(x.toLocaleLowerCase('zh-CN')));
     }
     function hasSharedAttribute(a,b){ return sharedAttributes(a,b).length>0; }
+    function isFocusTarget(item){
+      return priorityMode === 'single_bead' ? Number(item.area) === 1 : Number(item.area) === 5 && item.quality === 'red';
+    }
+    function focusPairGain(a,b){
+      if(!areAdjacent(a,b) || !hasSharedAttribute(a,b)) return 0;
+      return (isFocusTarget(a)?1:0) + (isFocusTarget(b)?1:0);
+    }
+    function computeFocusAdjacency(placements){
+      let total=0;
+      for(let i=0;i<placements.length;i++) for(let j=i+1;j<placements.length;j++) total+=focusPairGain(placements[i],placements[j]);
+      return total;
+    }
     function pairBonusEvents(a,b){
       if(!areAdjacent(a,b)) return [];
       const matchedAttributes=sharedAttributes(a,b);
@@ -3169,9 +3203,10 @@ function solverWorkerMain(){
       return {manualVector,defaultVector,links,weighted};
     }
     function ownSearchPriority(p){
-      if(p.manualOrder >= 0) return 1000000000000 - p.manualOrder*1000000000;
-      if(p.priorityTier >= 0) return 100000000 - p.priorityTier*1000000;
-      return 0;
+      const focusWeight = isFocusTarget(p) ? 1000000000000000 : 0;
+      if(p.manualOrder >= 0) return focusWeight + 1000000000000 - p.manualOrder*1000000000;
+      if(p.priorityTier >= 0) return focusWeight + 100000000 - p.priorityTier*1000000;
+      return focusWeight;
     }
     function instantiate(template,item,group=null){
       return {
@@ -3261,18 +3296,19 @@ function solverWorkerMain(){
     },0) : 0;
     const EPS = 1e-9;
     let best = {
-      complete:false,baseScore:-1,bonusScore:0,totalScore:-1,area:-1,itemCount:-1,adjacencyCount:-1,
+      complete:false,focusAdjacency:-1,baseScore:-1,bonusScore:0,totalScore:-1,area:-1,itemCount:-1,adjacencyCount:-1,
       manualPriorityVector:emptyManualVector(),defaultPriorityVector:emptyDefaultVector(),
       placements:[],occupied:0n,bonusEvents:[],priorityLinks:[]
     };
     const fullGroupByUid = new Map();
     for(const g of fullGroups) for(const item of g.items) fullGroupByUid.set(String(item.uid),g);
 
-    // 严格字典序：完整装入 > 实际总属性 > 手动优先级 > 默认优先级 > 有效同属性邻接数量。
+    // 两套结果分别优先最大化五格红武或一格珠子的有效邻接，再比较实际总伤害。
     // 后续字段只用于完全平局时保持结果稳定，不改变上述优化顺序。
     function compareEvaluationObjects(a,b){
       const ac=!!a.complete, bc=!!b.complete;
       if(ac!==bc) return ac?1:-1;
+      if((a.focusAdjacency||0)!==(b.focusAdjacency||0)) return (a.focusAdjacency||0)>(b.focusAdjacency||0)?1:-1;
       if(Math.abs(a.totalScore-b.totalScore)>EPS) return a.totalScore>b.totalScore?1:-1;
       const mc=compareVectors(a.manualPriorityVector,b.manualPriorityVector); if(mc!==0) return mc;
       const dc=compareVectors(a.defaultPriorityVector,b.defaultPriorityVector); if(dc!==0) return dc;
@@ -3294,7 +3330,7 @@ function solverWorkerMain(){
       }
     }
     function evaluateConcrete(placements){
-      let baseScore=0, area=0, occupied=0n, adjacencyCount=0;
+      let baseScore=0, area=0, occupied=0n, adjacencyCount=0, focusAdjacency=0;
       const manualVector=emptyManualVector(), defaultVector=emptyDefaultVector();
       const bonusEvents=[], priorityLinks=[];
       let bonusScore=0;
@@ -3304,6 +3340,7 @@ function solverWorkerMain(){
         if(!areAdjacent(a,b)) continue;
         if(!hasSharedAttribute(a,b)) continue;
         adjacencyCount++;
+        focusAdjacency += (isFocusTarget(a)?1:0) + (isFocusTarget(b)?1:0);
         targetPriorityGain(a,b,manualVector,defaultVector,priorityLinks);
         targetPriorityGain(b,a,manualVector,defaultVector,priorityLinks);
         if(useBonus){
@@ -3312,7 +3349,7 @@ function solverWorkerMain(){
       }
       return {
         complete:placements.length===totalItems,
-        baseScore,bonusScore,totalScore:baseScore+bonusScore,area,itemCount:placements.length,adjacencyCount,
+        baseScore,bonusScore,totalScore:baseScore+bonusScore,area,itemCount:placements.length,adjacencyCount,focusAdjacency,
         manualPriorityVector:manualVector,defaultPriorityVector:defaultVector,
         placements:placements.slice(),occupied,bonusEvents,priorityLinks
       };
@@ -3466,7 +3503,7 @@ function solverWorkerMain(){
         for(const it of singletonItems){
           const p=placementForItemAtMask(it,cell.mask); if(!p) continue;
           let score=0;
-          for(const old of multiConcrete) if(areAdjacent(p,old)) score += potentialPairBonus(p,old);
+          for(const old of multiConcrete) if(areAdjacent(p,old)) score += focusPairGain(p,old)*1000000 + potentialPairBonus(p,old);
           if(score>best) best=score;
         }
         return best;
@@ -3504,16 +3541,17 @@ function solverWorkerMain(){
           const p=placementForItemAtMask(item,cell.mask); if(!p) continue;
           const bg=useBonus?adjacencyGainFor(p,placed):{bonus:0,events:[]};
           const pg=priorityGainFor(p,placed);
+          const focusGain=placed.reduce((sum,old)=>sum+focusPairGain(p,old),0);
           let multiBonus=0, singleBonus=0, multiNeighbors=0;
           for(const old of placed){
             if(!areAdjacent(p,old)) continue;
             const b=potentialPairBonus(p,old);
             if(old.area===1) singleBonus+=b; else {multiBonus+=b; multiNeighbors++;}
           }
-          let primary=bg.bonus;
-          if(mode==='target') primary=multiBonus+singleBonus*0.15;
-          if(mode==='spread') primary=bg.bonus-singleBonus*0.20+multiNeighbors*0.0001;
-          const cand={ii,ci,p,primary,total:bg.bonus,priority:pg.weighted,multiBonus,multiNeighbors};
+          let primary=focusGain*1000000+bg.bonus;
+          if(mode==='target') primary=focusGain*1000000+multiBonus+singleBonus*0.15;
+          if(mode==='spread') primary=focusGain*1000000+bg.bonus-singleBonus*0.20+multiNeighbors*0.0001;
+          const cand={ii,ci,p,primary,total:bg.bonus,focusGain,priority:pg.weighted,multiBonus,multiNeighbors};
           if(!bestPair || cand.primary>bestPair.primary+EPS || (Math.abs(cand.primary-bestPair.primary)<=EPS && cand.total>bestPair.total+EPS) || (Math.abs(cand.primary-bestPair.primary)<=EPS && Math.abs(cand.total-bestPair.total)<=EPS && cand.priority>bestPair.priority) || (Math.abs(cand.primary-bestPair.primary)<=EPS && Math.abs(cand.total-bestPair.total)<=EPS && cand.priority===bestPair.priority && cand.multiBonus>bestPair.multiBonus+EPS)) bestPair=cand;
         }
         if(!bestPair) return null;
@@ -3581,7 +3619,7 @@ function solverWorkerMain(){
         }
       }
       if(!bestLocal) return evaluateConcrete([]);
-      const closeToBest = best.totalScore<0 || bestLocal.complete!==best.complete || bestLocal.totalScore>=best.totalScore-Math.max(1,Math.abs(best.totalScore)*0.015);
+      const closeToBest = best.totalScore<0 || bestLocal.complete!==best.complete || (bestLocal.focusAdjacency||0)>=(best.focusAdjacency||0) || bestLocal.totalScore>=best.totalScore-Math.max(1,Math.abs(best.totalScore)*0.015);
       if(useBonus && (intensive || closeToBest)) bestLocal=improveConcreteAssignments(bestLocal.placements,intensive?28:8);
       if(cacheKey){
         if(singletonCompletionCache.size>=2000) singletonCompletionCache.delete(singletonCompletionCache.keys().next().value);
@@ -3597,7 +3635,7 @@ function solverWorkerMain(){
     function currentCandidate(baseScore,bonusScore,area,itemCount,adjacencyCount,manualVector,defaultVector,placements,occupied,bonusEvents,priorityLinks){
       return {
         complete:itemCount===totalItems,
-        baseScore,bonusScore,totalScore:baseScore+bonusScore,area,itemCount,adjacencyCount,
+        baseScore,bonusScore,totalScore:baseScore+bonusScore,area,itemCount,adjacencyCount,focusAdjacency:computeFocusAdjacency(placements),
         manualPriorityVector:manualVector.slice(),defaultPriorityVector:defaultVector.slice(),
         placements:placements.slice(),occupied,bonusEvents:bonusEvents.slice(),priorityLinks:priorityLinks.slice()
       };
@@ -3609,7 +3647,7 @@ function solverWorkerMain(){
       self.postMessage({
         type:'progress',stage:currentStage,nodes,elapsed:Math.round(now-started),
         bestComplete:best.complete,bestArea:best.area,bestBase:best.baseScore,bestBonus:best.bonusScore,
-        bestTotal:best.totalScore,bestAdjacency:best.adjacencyCount,bestItems:best.itemCount,totalArea,totalItems,...extra
+        bestTotal:best.totalScore,bestAdjacency:best.adjacencyCount,bestFocus:best.focusAdjacency,bestItems:best.itemCount,totalArea,totalItems,...extra
       });
     }
     function serializeBest(){
@@ -3714,8 +3752,8 @@ function solverWorkerMain(){
       return bestSel;
     }
     function candidatePackingScore(template,occupied,placed,rem,lastIdx,selectedGi){
-      let adjacent=0;
-      for(const old of placed) if((template.neighborMask&old.mask)!==0n) adjacent++;
+      let adjacent=0, focusGain=0;
+      for(const old of placed) if((template.neighborMask&old.mask)!==0n){ adjacent++; focusGain+=focusPairGain(template,old); }
       let future=0;
       const nextOcc=occupied|template.mask;
       for(let gi=0;gi<groups.length;gi++){
@@ -3727,7 +3765,7 @@ function solverWorkerMain(){
         future += Math.min(count,need*8);
       }
       const opp=singletonOpportunityProxy(nextOcc,placed.concat(template));
-      return future*100 + Math.max(0,opp)*0.5 + adjacent*5;
+      return focusGain*1000000 + future*100 + Math.max(0,opp)*0.5 + adjacent*5;
     }
 
     let fullPackingAttempted = skippedCount===0 && totalArea<=activeCells;
@@ -3954,8 +3992,9 @@ function solverWorkerMain(){
             const depthRatio=fullCoreItemCount?depth/fullCoreItemCount:1;
             const opp=depthRatio>0.25?singletonOpportunityProxy(nextOcc,placed.concat(p)):0;
             const compact=placed.reduce((n,old)=>n+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
-            const baseScore=bg.bonus+Math.max(0,opp)*(0.15+0.55*depthRatio)+compact*0.01;
-            scored.push({pi,p,score:baseScore*(0.92+rand()*0.20)+rand()*Math.max(1,Math.abs(baseScore)*0.03)});
+            const focusGain=placed.reduce((sum,old)=>sum+focusPairGain(p,old),0);
+            const baseScore=focusGain*1000000+bg.bonus+Math.max(0,opp)*(0.15+0.55*depthRatio)+compact*0.01;
+            scored.push({pi,p,score:baseScore*(0.98+rand()*0.04)+rand()*Math.max(1,Math.abs(baseScore)*0.001)});
           }
           scored.sort((a,b)=>b.score-a.score || a.pi-b.pi);
           const oldLast=lastIdx[gi]; rem[gi]--;
@@ -3995,12 +4034,14 @@ function solverWorkerMain(){
           const pg=priorityGainFor(p,placed);
           const bg=useBonus?adjacencyGainFor(p,placed):{bonus:0,events:[]};
           const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
+          const focusGain=placed.reduce((s,old)=>s+focusPairGain(p,old),0);
           const nextOcc=occupied|p.mask;
           const depthRatio=fullCoreItemCount?depth/fullCoreItemCount:1;
           const singletonOpp=depthRatio>0.20?singletonOpportunityProxy(nextOcc,placed.concat(p)):0;
-          scored.push({pi,p,pg,bg,compact,singletonOpp,branchTotal:bg.bonus+Math.max(0,singletonOpp)*(0.20+0.70*depthRatio)});
+          scored.push({pi,p,pg,bg,compact,focusGain,singletonOpp,branchTotal:bg.bonus+Math.max(0,singletonOpp)*(0.20+0.70*depthRatio)});
         }
         scored.sort((a,b)=>{
+          if(a.focusGain!==b.focusGain) return b.focusGain-a.focusGain;
           if(Math.abs(a.branchTotal-b.branchTotal)>EPS) return b.branchTotal-a.branchTotal;
           const mc=compareVectors(b.pg.manualVector,a.pg.manualVector); if(mc!==0) return mc;
           const dc=compareVectors(b.pg.defaultVector,a.pg.defaultVector); if(dc!==0) return dc;
@@ -4038,8 +4079,7 @@ function solverWorkerMain(){
         const remainingCount=rem.reduce((sum,n)=>sum+n,0);
         const canStillComplete=itemCount+remainingCount>=totalItems;
         if(best.complete && !canStillComplete) return;
-        // 仅在本分支已不可能完整装入时，才使用实际总属性的安全上界剪枝。
-        if(!canStillComplete && !best.complete && baseScore+remBase+globalMaxBonus<best.totalScore-EPS) return;
+        // 目标邻接优先于总伤害，不能只按伤害上界剪枝。
         let sel=null;
         for(let gi=0;gi<groups.length;gi++){
           if(rem[gi]<=0) continue;
@@ -4059,9 +4099,11 @@ function solverWorkerMain(){
           const pg=priorityGainFor(p,placed);
           const bg=useBonus?adjacencyGainFor(p,placed):{bonus:0,events:[]};
           const compact=placed.reduce((s,old)=>s+(areAdjacent(p,old)&&hasSharedAttribute(p,old)?1:0),0);
-          scored.push({pi,p,pg,bg,compact,totalGain:p.value+bg.bonus});
+          const focusGain=placed.reduce((s,old)=>s+focusPairGain(p,old),0);
+          scored.push({pi,p,pg,bg,compact,focusGain,totalGain:p.value+bg.bonus});
         }
         scored.sort((a,b)=>{
+          if(a.focusGain!==b.focusGain) return b.focusGain-a.focusGain;
           if(Math.abs(a.totalGain-b.totalGain)>EPS) return b.totalGain-a.totalGain;
           const mc=compareVectors(b.pg.manualVector,a.pg.manualVector); if(mc!==0) return mc;
           const dc=compareVectors(b.pg.defaultVector,a.pg.defaultVector); if(dc!==0) return dc;
@@ -4157,6 +4199,7 @@ function renderLiveSolverStatus(){
 距求解器最近一次进度报告：${sinceWorkerReport} ms
 当前是否完整装入：${s.bestComplete?'是':'否'}
 当前最好实际总伤害：${bestKnown?formatNum(s.bestTotal):'尚未形成可评分方案'}
+当前目标法宝邻接：${bestKnown?(s.bestFocus ?? 0):'-'}
 当前最好基础值：${bestKnown?formatNum(s.bestBase):'-'}
 当前最好相邻加成：${bestKnown?formatNum(s.bestBonus):'-'}
 当前最好有效同属性邻接：${bestKnown?(s.bestAdjacency ?? 0):'-'}
@@ -4172,7 +4215,7 @@ function startSolverStatusHeartbeat(activeCells,totalItems){
   const now = performance.now();
   solverStatusState = {
     startedAt:now,lastReportAt:now,stage:'准备并启动后台搜索',nodes:0,
-    bestComplete:false,bestArea:0,bestBase:-1,bestBonus:0,bestTotal:-1,bestAdjacency:0,bestItems:0,
+    bestComplete:false,bestArea:0,bestBase:-1,bestBonus:0,bestTotal:-1,bestFocus:0,bestAdjacency:0,bestItems:0,
     activeCells,totalItems,restarts:0
   };
   solverStatusTimer = setInterval(renderLiveSolverStatus,500);
@@ -4188,6 +4231,7 @@ function updateSolverStatusFromMessage(msg,activeCells){
     bestBase:msg.bestBase ?? msg.best?.baseScore ?? solverStatusState.bestBase,
     bestBonus:msg.bestBonus ?? msg.best?.bonusScore ?? solverStatusState.bestBonus,
     bestTotal:msg.bestTotal ?? msg.best?.totalScore ?? solverStatusState.bestTotal,
+    bestFocus:msg.bestFocus ?? msg.best?.focusAdjacency ?? solverStatusState.bestFocus,
     bestAdjacency:msg.bestAdjacency ?? msg.best?.adjacencyCount ?? solverStatusState.bestAdjacency,
     bestItems:msg.bestItems ?? msg.best?.itemCount ?? solverStatusState.bestItems,
     totalItems:msg.totalItems ?? solverStatusState.totalItems,
@@ -4202,7 +4246,7 @@ function setSolverRunning(running){
   const solveBtn = document.getElementById('solveBtn');
   const cancelBtn = document.getElementById('cancelSolveBtn');
   solveBtn.disabled = running;
-  solveBtn.textContent = running ? '正在搜索…' : '搜索更优摆放解';
+  solveBtn.textContent = running ? '正在生成两套图…' : '生成两套优先级摆放图';
   cancelBtn.disabled = !running;
 }
 
@@ -4228,7 +4272,7 @@ function compareSolverBest(a,b){
   if(!a) return -1;
   if(!b) return 1;
   if(!!a.complete!==!!b.complete) return a.complete?1:-1;
-  const numbers=['totalScore'];
+  const numbers=['focusAdjacency','totalScore'];
   for(const key of numbers) if(Math.abs((Number(a[key])||0)-(Number(b[key])||0))>1e-9) return Number(a[key])>Number(b[key])?1:-1;
   const compareVector=(x=[],y=[])=>{
     const n=Math.max(x.length,y.length);
@@ -4245,7 +4289,7 @@ function compareSolverBest(a,b){
 
 function buildProblemSignature(){
   return JSON.stringify({
-    version:2,
+    version:3,
     W,H,active,
     allowRotate:document.getElementById('allowRotate').checked,
     allowMirror:document.getElementById('allowMirror').checked,
@@ -4373,25 +4417,40 @@ function solveAndRender(){
   const parallel=document.getElementById('parallelSearch').checked;
   const workerLimit=getParallelWorkerLimit();
   const workerCount=parallel?Math.max(2,Math.min(workerLimit,Math.floor(Number(document.getElementById('workerCount').value)||2))):1;
+  const priorityModes=['red_weapon','single_bead'];
+  const modeNames={red_weapon:'五格红武优先',single_bead:'一格珠子优先'};
   const problemSignature = buildProblemSignature();
   const retainedBeforeRun = getRetainedBestRecord(problemSignature);
-  const retainedBeforeBest = retainedBeforeRun?.result?.best || null;
-  if(retainedBeforeBest) renderResultGrid(retainedBeforeBest);
-  showRetainedBestSearchState(retainedBeforeBest);
+  const retainedBeforeByMode={
+    red_weapon:retainedBeforeRun?.result?.bestByMode?.red_weapon || retainedBeforeRun?.result?.best || null,
+    single_bead:retainedBeforeRun?.result?.bestByMode?.single_bead || null
+  };
+  for(const mode of priorityModes) if(retainedBeforeByMode[mode]) renderResultGrid(retainedBeforeByMode[mode],mode);
+  const initialNotice=document.getElementById('bestResultNotice');
+  initialNotice.className='best-result-notice neutral';
+  initialNotice.textContent=retainedBeforeByMode.red_weapon || retainedBeforeByMode.single_bead
+    ? '已载入当前配置此前保留的两套方案。本次搜索会分别比较并更新红武优先与珠子优先结果。'
+    : '当前配置还没有保留方案。本次计算结束后会同时保存两套优先级结果。';
 
   const serialItems = items.map(t=>({
     ...t,
     placements:t.placements.map(p=>({...p, mask:p.mask.toString()}))
   }));
-  solverWorkers=Array.from({length:workerCount},()=>createSolverWorker());
+  const workerTasks=[];
+  for(const mode of priorityModes){
+    for(let replica=0;replica<workerCount;replica++) workerTasks.push({worker:createSolverWorker(),mode,replica});
+  }
+  solverWorkers=workerTasks.map(task=>task.worker);
   solverWorker=solverWorkers[0];
   setSolverRunning(true);
   startSolverStatusHeartbeat(activeCells, inventory.length);
   const totalSearchArea = inventory.reduce((sum,x)=>sum+(x.cells?.length||0),0);
   const totalSearchBase = inventory.reduce((sum,x)=>sum+Math.max(0,Number(x.value)||0),0);
-  document.getElementById('statusBox').textContent = `正在后台搜索（${searchMode==='fast'?'快速':'深度'}档，${workerCount} 个 Worker）…
+  document.getElementById('statusBox').textContent = `正在后台同时生成两套摆放图（${searchMode==='fast'?'快速':'深度'}档，共 ${workerTasks.length} 个 Worker）…
 物品总占格：${totalSearchArea}，可用空间：${activeCells}
-${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最佳可行子集。':(totalSearchArea<=activeCells?'先寻找全部物品的完整摆法，再按实际总伤害与邻接顺序优化。':'物品总面积超过空间，将按实际总伤害与邻接顺序搜索最佳可行子集。')}
+${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最佳可行子集。':(totalSearchArea<=activeCells?'先寻找全部物品的完整摆法，再分别按目标邻接、实际总伤害优化。':'物品总面积超过空间，将分别按目标邻接、实际总伤害搜索最佳可行子集。')}
+方案一：五格红武的同属性邻居数量优先
+方案二：一格珠子的同属性邻居数量优先
 节点上限：${nodeLimit.toLocaleString('zh-CN')}
 时间上限：${timeLimit} ms
 自定义邻接优先物品：${manualItems.length} 件
@@ -4400,54 +4459,81 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
 状态区会每 500 ms 更新计时；求解器阶段、节点和最好评分在收到新进度时同步更新。
 页面仍可正常操作；需要中止时点击“停止计算”。`;
 
-  let completedWorkers=0, totalNodes=0, globalBest=null, winningMessage=null;
+  let completedWorkers=0, totalNodes=0;
+  const globalBestByMode={red_weapon:null,single_bead:null};
+  const winningMessageByMode={red_weapon:null,single_bead:null};
   const wallStarted=performance.now();
-  const finishWorker=function(worker,msg){
+  const finishWorker=function(worker,mode,msg){
     completedWorkers++;
     totalNodes+=Number(msg.nodes)||0;
-    const comparison=compareSolverBest(msg.best,globalBest);
-    if(comparison>0) globalBest=msg.best;
-    if(comparison>=0 || !winningMessage) winningMessage=msg;
+    const comparison=compareSolverBest(msg.best,globalBestByMode[mode]);
+    if(comparison>0) globalBestByMode[mode]=msg.best;
+    if(comparison>=0 || !winningMessageByMode[mode]) winningMessageByMode[mode]=msg;
     const url=worker._blobUrl; worker.terminate(); if(url) URL.revokeObjectURL(url);
-    if(completedWorkers<workerCount) return;
-    const best=globalBest, meta=winningMessage;
+    if(completedWorkers<workerTasks.length) return;
+    const redBest=globalBestByMode.red_weapon;
+    const beadBest=globalBestByMode.single_bead;
+    const redMeta=winningMessageByMode.red_weapon;
+    const beadMeta=winningMessageByMode.single_bead;
+    const makeSolverMeta=(meta)=>({fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount});
     const currentResult = {
-      best, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:meta.stopped, width:W, height:H, active:active.map(r=>r.slice()),
+      best:redBest, bestByMode:{red_weapon:redBest,single_bead:beadBest}, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:!!(redMeta.stopped||beadMeta.stopped), width:W, height:H, active:active.map(r=>r.slice()),
       inventory:inventory.map(x=>({...x,cells:cloneCells(x.cells)})),
-      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
+      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,priorityModes,optimizationOrder:['complete_loading','focus_target_adjacency','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
       skipped:skipped.map(x=>({no:x.no,name:x.name,area:x.area,value:x.value})),manualItems,
-      solverMeta:{fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount}
+      solverMeta:makeSolverMeta(redMeta),
+      solverMetaByMode:{red_weapon:makeSolverMeta(redMeta),single_bead:makeSolverMeta(beadMeta)}
     };
     const previousRecord=getRetainedBestRecord(problemSignature);
-    const previousBest=previousRecord?.result?.best || null;
-    const comparisonToPrevious=previousBest ? compareSolverBest(best,previousBest) : 1;
-    let retainedRecord=previousRecord;
-    if(!previousBest || comparisonToPrevious>0){
-      retainedRecord={signature:problemSignature,result:currentResult,savedAt:Date.now()};
-      saveRetainedBestRecord(retainedRecord);
+    const previousByMode={
+      red_weapon:previousRecord?.result?.bestByMode?.red_weapon || previousRecord?.result?.best || null,
+      single_bead:previousRecord?.result?.bestByMode?.single_bead || null
+    };
+    const retainedByMode={};
+    const improvedModes=[];
+    for(const currentMode of priorityModes){
+      const previous=previousByMode[currentMode];
+      const current=globalBestByMode[currentMode];
+      if(!previous || compareSolverBest(current,previous)>0){
+        retainedByMode[currentMode]=current;
+        improvedModes.push(modeNames[currentMode]);
+      }else retainedByMode[currentMode]=previous;
     }
-    const retainedResult=retainedRecord?.result || currentResult;
+    const retainedResult={...currentResult,best:retainedByMode.red_weapon,bestByMode:retainedByMode};
+    saveRetainedBestRecord({signature:problemSignature,result:retainedResult,savedAt:Date.now()});
     lastResult=retainedResult;
     solverWorkers=[]; solverWorker=null; stopSolverStatusHeartbeat(); setSolverRunning(false);
-    renderResultGrid(lastResult.best);
-    renderStats(lastResult.best,lastResult.nodes,lastResult.elapsed,lastResult.stopped,activeCells,lastResult.skipped || skipped,lastResult.solverMeta);
-    renderBestResultNotice(best,previousBest,comparisonToPrevious,lastResult.best);
+    renderResultGrid(retainedByMode.red_weapon,'red_weapon');
+    renderResultGrid(retainedByMode.single_bead,'single_bead');
+    renderStats(retainedByMode.red_weapon,lastResult.nodes,lastResult.elapsed,lastResult.stopped,activeCells,lastResult.skipped || skipped,lastResult.solverMetaByMode.red_weapon);
+    document.getElementById('statBestScore').textContent=formatNum(retainedByMode.single_bead.totalScore);
+    document.getElementById('statRunScore').textContent=`${retainedByMode.single_bead.focusAdjacency ?? 0} 次`;
+    const redFocus=retainedByMode.red_weapon.focusAdjacency ?? 0;
+    const beadFocus=retainedByMode.single_bead.focusAdjacency ?? 0;
+    const originalStatus=document.getElementById('statusBox').textContent;
+    document.getElementById('statusBox').textContent=`【五格红武优先】目标邻接 ${redFocus} 次，总伤害 ${formatNum(retainedByMode.red_weapon.totalScore)}\n【一格珠子优先】目标邻接 ${beadFocus} 次，总伤害 ${formatNum(retainedByMode.single_bead.totalScore)}\n\n${originalStatus}`;
+    const notice=document.getElementById('bestResultNotice');
+    notice.className='best-result-notice good';
+    notice.textContent=improvedModes.length
+      ? `两套摆放图已生成并保留；本次刷新：${improvedModes.join('、')}。两套方案都先比较目标法宝的同属性邻居数量，再比较总伤害。`
+      : '两套摆放图已生成；本次结果未超过此前保留方案，界面继续显示各自的最佳结果。';
   };
-  solverWorkers.forEach((worker,workerIndex)=>{ worker.onmessage = function(ev){
+  workerTasks.forEach((task,taskIndex)=>{ const {worker,mode,replica}=task; worker.onmessage = function(ev){
     const msg = ev.data;
     if(msg.type === 'progress'){
-      updateSolverStatusFromMessage({...msg,nodes:totalNodes+(Number(msg.nodes)||0),stage:`Worker ${workerIndex+1}/${workerCount}：${msg.stage||'搜索中'}`},activeCells);
+      updateSolverStatusFromMessage({...msg,nodes:totalNodes+(Number(msg.nodes)||0),stage:`${modeNames[mode]} ${replica+1}/${workerCount}：${msg.stage||'搜索中'}`},activeCells);
       return;
     }
     if(msg.type === 'incumbent'){
-      if(compareSolverBest(msg.best,globalBest)>0){
-        globalBest=msg.best;
-        const displayBest=retainedBeforeBest && compareSolverBest(retainedBeforeBest,msg.best)>=0 ? retainedBeforeBest : msg.best;
-        renderResultGrid(displayBest);
+      if(compareSolverBest(msg.best,globalBestByMode[mode])>0){
+        globalBestByMode[mode]=msg.best;
+        const previous=retainedBeforeByMode[mode];
+        const displayBest=previous && compareSolverBest(previous,msg.best)>=0 ? previous : msg.best;
+        renderResultGrid(displayBest,mode);
       }
       updateSolverStatusFromMessage({
         ...msg,
-        stage:msg.stage || (msg.best.complete?'已找到完整摆法，继续优化':'已找到更优可行方案'),
+        stage:`${modeNames[mode]}：${msg.stage || (msg.best.complete?'已找到完整摆法，继续优化':'已找到更优可行方案')}`,
         bestComplete:msg.best.complete,
         bestArea:msg.best.area,
         bestBase:msg.best.baseScore,
@@ -4459,7 +4545,7 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
       return;
     }
     if(msg.type !== 'done') return;
-    finishWorker(worker,msg);
+    finishWorker(worker,mode,msg);
   };
   worker.onerror = function(err){
     const message = err && err.message ? err.message : '未知错误';
@@ -4469,7 +4555,8 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
   worker.postMessage({
     items:serialItems,
     activeMask:activeMask.toString(), activeCells, W, H, nodeLimit, timeLimit, useBonus,
-    seedOffset:Math.imul(workerIndex+1,0x85ebca6b),
+    priorityMode:mode,
+    seedOffset:Math.imul(taskIndex+1,0x85ebca6b),
     manualCount:manualPriorityLevels.length,
     defaultTierCount:SELF_PRIORITY_TIERS.length,
     requiredTotalItems:inventory.length,
@@ -4481,14 +4568,21 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
 }
 
 
-function renderResultGrid(best){
-  const el = document.getElementById('resultGrid');
+function renderResultGrid(best, mode=null){
+  if(!mode){
+    renderResultGrid(best,'red_weapon');
+    renderResultGrid(best,'single_bead');
+    return;
+  }
+  const redMode = mode === 'red_weapon';
+  const suffix = redMode ? 'Red' : 'Bead';
+  const el = document.getElementById(`resultGrid${suffix}`);
   el.style.gridTemplateColumns = `repeat(${W}, var(--cell))`;
   el.innerHTML = '';
   const cellMap = new Map();
   const legends = [];
   const showAttributeMarks = isMultiAttributeMode();
-  const attributeLegend = document.getElementById('attributeLegend');
+  const attributeLegend = document.getElementById(`attributeLegend${suffix}`);
   if(attributeLegend) attributeLegend.hidden = !showAttributeMarks;
   if(best && best.placements){
     best.placements.forEach((p)=>{
@@ -4542,7 +4636,7 @@ function renderResultGrid(best){
       el.appendChild(div);
     }
   }
-  const legend = document.getElementById('legend');
+  const legend = document.getElementById(`legend${suffix}`);
   legend.innerHTML = '';
   legends.sort((a,b)=>{
     const na = Number((a.label.match(/^#(\d+)/)||[])[1]) || 0;
@@ -4556,6 +4650,9 @@ function renderResultGrid(best){
     t.innerHTML = `<span class="sw" style="background:${x.fill};border-color:${x.border}"></span>${escapeHtml(x.label)} <span class="${roleClass}">${roleText}</span>`;
     legend.appendChild(t);
   });
+  document.getElementById(redMode?'redFocusMetric':'beadFocusMetric').textContent = best ? `${best.focusAdjacency ?? 0} 次` : '-';
+  document.getElementById(redMode?'redScoreMetric':'beadScoreMetric').textContent = best ? formatNum(best.totalScore) : '-';
+  document.getElementById(redMode?'redBonusMetric':'beadBonusMetric').textContent = best ? formatNum(best.bonusScore) : '-';
 }
 
 function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solverMeta={}){
@@ -4565,7 +4662,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   const manualPriorityTotal = (best.manualPriorityVector || []).reduce((a,b)=>a+b,0);
   const defaultPriorityTotal = (best.defaultPriorityVector || []).reduce((a,b)=>a+b,0);
   document.getElementById('statPriority').textContent = `${manualPriorityTotal + defaultPriorityTotal} 次`;
-  document.getElementById('statAdjacency').textContent = `${best.adjacencyCount ?? 0} 对`;
+  document.getElementById('statAdjacency').textContent = `${best.focusAdjacency ?? 0} 次`;
   document.getElementById('statArea').textContent = `${best.area}/${activeCells}`;
   document.getElementById('statItems').textContent = best.itemCount;
   document.getElementById('statNodes').textContent = nodes.toLocaleString('zh-CN');
@@ -4601,7 +4698,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
     else if(as||bs) singleMultiAdj++;
     else multiMultiAdj++;
   }
-  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
+  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 当前目标法宝的同属性邻居数量 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n当前目标邻接：${best.focusAdjacency ?? 0} 次\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
 function buildPrioritySummary(best){
   const countByItem = new Map();
