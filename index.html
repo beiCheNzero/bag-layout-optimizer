@@ -95,6 +95,15 @@
   .technique-effects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
   .technique-effect-card{padding:9px 10px;border:1px solid #dbe3ef;border-radius:9px;background:#fff;color:#475569;font-size:12px;line-height:1.55}
   .technique-effect-card b{display:block;margin-bottom:2px;color:#1f2937;font-size:13px}
+  .divine-panel{margin-top:12px;padding:12px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc}
+  .divine-panel h3{margin:0 0 8px}
+  .divine-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .divine-slot{display:flex;flex-direction:column;align-items:stretch;gap:5px;margin:0;padding:9px;border:1px solid #e2e8f0;border-radius:9px;background:#fff}
+  .divine-slot span{font-size:12px;font-weight:700;color:#475569}
+  .divine-slot select{width:100%}
+  .divine-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+  .divine-card{padding:9px 10px;border:1px solid #dbe3ef;border-radius:9px;background:#fff;color:#475569;font-size:12px;line-height:1.55}
+  .divine-card b{display:block;margin-bottom:2px;color:#1f2937;font-size:13px}
   .release-panel{margin-top:12px;padding:12px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc}
   .release-panel h3{margin:0 0 8px}
   .release-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
@@ -224,7 +233,7 @@
   }
   @media (max-width:899px){
     main{grid-template-columns:1fr}
-    .space-body,.output-wrap,.result-main,.recognition-layout,.build-grid,.technique-effects{grid-template-columns:1fr}
+    .space-body,.output-wrap,.result-main,.recognition-layout,.build-grid,.technique-effects,.divine-grid,.divine-summary{grid-template-columns:1fr}
     .table-scroll{overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
     .table-scroll table,.table-scroll tbody,.table-scroll tr,.table-scroll td{touch-action:pan-y}
     .library-scroll,.inventory-scroll{max-height:none}
@@ -309,6 +318,17 @@
       <div id="buildSummary" class="build-summary"></div>
       <div id="techniqueEffects" class="technique-effects"></div>
       <div class="hint">只有主功法会触发技能；副功法不触发技能，只提供属性数值，品质和星级会影响其数值。选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。“品质待补”表示功法名称已收录，但公开资料尚不足以确认品质，并非功法不存在。当前暂不计算精确升星数值。</div>
+      <div class="divine-panel">
+        <h3>神通（金系 / 体系）</h3>
+        <div class="divine-grid">
+          <label class="divine-slot"><span>神通 1</span><select id="divinePower1"></select></label>
+          <label class="divine-slot"><span>神通 2</span><select id="divinePower2"></select></label>
+          <label class="divine-slot"><span>神通 3</span><select id="divinePower3"></select></label>
+          <label class="divine-slot"><span>神通 4</span><select id="divinePower4"></select></label>
+        </div>
+        <div id="divinePowerSummary" class="divine-summary"></div>
+        <div class="hint">目前只收录金系和体系神通，最多选择四个且不能重复。前置关系和效果用于配装记录；具体数值随版本变化，暂不计入布局伤害评分。</div>
+      </div>
     </div>
 
     <div class="card library-card">
@@ -514,6 +534,7 @@
       <ol>
         <li>先设置背包宽度、高度，并点击空间格子标记已解锁区域。</li>
         <li>选择主功法和副功法；只有主功法触发技能，副功法只增加属性数值。副功法不选时为单属性，选择后自动切换为多属性。</li>
+        <li>选择最多四个神通；当前只提供金系和体系，并显示蓝色前置与紫/红进阶关系。</li>
         <li>设置PVE/PVP和计划计算的战斗回合数；当前仅记录这些条件，待补充具体数值后参与伤害模拟。</li>
         <li>截图自动识别不准时，点击“开始半自动标注”：点物品任意格，选择正确形状，依次确认到全部格子完成。</li>
         <li>物品库默认单属性。需要第二种属性时勾选“多属性”，然后在操作前选择主属性或副属性。</li>
@@ -607,6 +628,29 @@ const TECHNIQUE_OPTIONS = [
   {value:'奇门遁甲', attribute:'体', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'祭血咒天诀', attribute:'邪', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'阴阳同济大法', attribute:'邪', quality:'unknown', effect:'基础效果资料待补充。'}
+];
+const DIVINE_POWER_QUALITY_LABEL = {blue:'蓝', purple:'紫', red:'红', unknown:'品质待补'};
+const DIVINE_POWER_OPTIONS = [
+  {id:'gold_fengmang', name:'锋芒', attribute:'金', quality:'blue', effect:'战斗前期提高暴击率；持续回合结束后会承受伤害代价。'},
+  {id:'gold_ruiyi', name:'锐意', attribute:'金', quality:'purple', prerequisite:'锋芒', effect:'提高暴击伤害。'},
+  {id:'gold_nuhun', name:'怒魂', attribute:'金', quality:'red', prerequisite:'锋芒', effect:'暴击时恢复怒气，每回合有触发上限。'},
+  {id:'gold_liejia', name:'裂甲', attribute:'金', quality:'blue', effect:'造成金系伤害时概率叠加穿甲。'},
+  {id:'gold_chenxu', name:'趁虚', attribute:'金', quality:'purple', prerequisite:'裂甲', effect:'强化对已叠加穿甲目标的输出，具体触发方式随版本变化。'},
+  {id:'gold_yinsha', name:'饮煞', attribute:'金', quality:'red', prerequisite:'裂甲', effect:'穿甲达到条件后提高法宝伤害。'},
+  {id:'gold_shiming', name:'噬命', attribute:'金', quality:'blue', effect:'累计造成金系伤害后获得强攻层数。'},
+  {id:'gold_yunfeng', name:'陨锋', attribute:'金', quality:'purple', prerequisite:'噬命', effect:'金系伤害有概率按强攻层数追加真实伤害。'},
+  {id:'gold_ninggang', name:'凝罡', attribute:'金', quality:'red', prerequisite:'噬命', effect:'强攻首次叠满时触发一次多段金系爆发。'},
+  {id:'body_jinshen', name:'金身', attribute:'体', quality:'blue', effect:'获得体系核心增益，为化身流提供基础。'},
+  {id:'body_huashen', name:'化身', attribute:'体', quality:'red', prerequisite:'金身', effect:'提高法宝使用频率。'},
+  {id:'body_lianti', name:'炼体', attribute:'体', quality:'blue', effect:'体系基础成长与生存神通；完整技能文本待补。'},
+  {id:'body_jixian', name:'极限', attribute:'体', quality:'red', prerequisite:'炼体', effect:'炼体的进阶神通；完整技能文本待补。'},
+  {id:'body_juexing', name:'觉醒', attribute:'体', quality:'unknown', effect:'向对手施加负面状态，是吸引的前置。'},
+  {id:'body_xiyin', name:'吸引', attribute:'体', quality:'unknown', prerequisite:'觉醒', effect:'约三回合后偷取对手的部分增益。'},
+  {id:'body_jishi', name:'积势', attribute:'体', quality:'unknown', effect:'提高防御，强化生存及防御转伤方向收益。'},
+  {id:'body_hushen', name:'护身', attribute:'体', quality:'unknown', prerequisite:'积势', effect:'生命较低时提高最终伤害减免。'},
+  {id:'body_xuanjia', name:'玄甲', attribute:'体', quality:'unknown', effect:'提高护盾与伤害减免。'},
+  {id:'body_tiangang', name:'天罡', attribute:'体', quality:'unknown', prerequisite:'玄甲', effect:'进一步强化生存能力，适合护盾体系。'},
+  {id:'body_bihu', name:'庇护', attribute:'体', quality:'unknown', effect:'提供庇护与清除负面方向效果；完整技能文本待补。'}
 ];
 const EFFECT_OPTIONS = [
   {value:'buff', label:'增益'},
@@ -866,6 +910,62 @@ function initializeTechniqueControls(){
   document.getElementById('secondaryTechniqueAttribute').innerHTML = attributeOptionsHtml('木');
   syncTechniqueSettings();
 }
+function divinePowerOptionsHtml(selected=''){
+  const groups = ['金','体'].map(attribute=>{
+    const rows = DIVINE_POWER_OPTIONS.filter(x=>x.attribute===attribute).map(x=>{
+      const quality = DIVINE_POWER_QUALITY_LABEL[x.quality] || '品质待补';
+      return `<option value="${escapeAttr(x.id)}" ${x.id===selected?'selected':''}>[${quality}] ${escapeHtml(x.name)}</option>`;
+    }).join('');
+    return `<optgroup label="${attribute}系神通">${rows}</optgroup>`;
+  }).join('');
+  return `<option value="">不选择</option>${groups}`;
+}
+function divinePowerSelects(){
+  return [1,2,3,4].map(index=>document.getElementById(`divinePower${index}`)).filter(Boolean);
+}
+function selectedDivinePowerIds(){
+  return divinePowerSelects().map(select=>select.value).filter(Boolean);
+}
+function selectedDivinePowerDetails(ids=selectedDivinePowerIds()){
+  return ids.map(id=>DIVINE_POWER_OPTIONS.find(x=>x.id===id)).filter(Boolean).map(x=>({...x}));
+}
+function initializeDivinePowerControls(){
+  divinePowerSelects().forEach(select=>{ select.innerHTML = divinePowerOptionsHtml(''); });
+  syncDivinePowerControls();
+}
+function setDivinePowerSelection(ids=[]){
+  const valid=[];
+  for(const id of Array.isArray(ids)?ids:[]){
+    if(valid.length>=4 || valid.includes(id) || !DIVINE_POWER_OPTIONS.some(x=>x.id===id)) continue;
+    valid.push(id);
+  }
+  divinePowerSelects().forEach((select,index)=>{ select.value = valid[index] || ''; });
+  syncDivinePowerControls();
+}
+function syncDivinePowerControls(){
+  const selects=divinePowerSelects();
+  const chosen=selects.map(select=>select.value).filter(Boolean);
+  selects.forEach(select=>{
+    [...select.options].forEach(option=>{
+      option.disabled = !!option.value && option.value!==select.value && chosen.includes(option.value);
+    });
+  });
+  renderDivinePowerSummary();
+}
+function renderDivinePowerSummary(){
+  const root=document.getElementById('divinePowerSummary');
+  if(!root) return;
+  const powers=selectedDivinePowerDetails();
+  if(!powers.length){
+    root.innerHTML='<div class="empty">尚未选择神通。</div>';
+    return;
+  }
+  root.innerHTML=powers.map((power,index)=>{
+    const quality=DIVINE_POWER_QUALITY_LABEL[power.quality] || '品质待补';
+    const prerequisite=power.prerequisite ? `<br><span class="hint">前置：${escapeHtml(power.prerequisite)}</span>` : '';
+    return `<div class="divine-card"><b>${index+1}. ${escapeHtml(power.attribute)}系｜${escapeHtml(power.name)}｜${quality}</b>${escapeHtml(power.effect)}${prerequisite}</div>`;
+  }).join('');
+}
 function selectedTechniqueName(scope){
   const select = document.getElementById(scope==='main'?'mainTechnique':'secondaryTechnique');
   if(!select || !select.value) return '';
@@ -937,6 +1037,7 @@ function init(){
   itemDefs = cloneItems(DEFAULT_ITEMS);
   configureWorkerCountControl();
   initializeTechniqueControls();
+  initializeDivinePowerControls();
   bindEvents();
   renderQualitySelect(document.getElementById('customQuality'), 'green', false, 1);
   syncAttributeModeControls();
@@ -982,6 +1083,7 @@ function bindEvents(){
     e.target.value = String(Math.max(1, Math.min(99, Math.floor(Number(e.target.value)||1))));
     renderBuildSummary();
   });
+  divinePowerSelects().forEach(select=>select.addEventListener('change', syncDivinePowerControls));
   document.getElementById('autoReleaseOrderBtn').addEventListener('click', autoSortReleaseOrder);
   document.getElementById('resizeBtn').addEventListener('click', applySize);
   document.getElementById('fullBtn').addEventListener('click', ()=>{
@@ -4582,11 +4684,12 @@ function compareSolverBest(a,b){
 
 function buildProblemSignature(){
   return JSON.stringify({
-    version:4,
+    version:5,
     W,H,active,
     allowRotate:document.getElementById('allowRotate').checked,
     allowMirror:document.getElementById('allowMirror').checked,
     useAdjacencyBonus:document.getElementById('useAdjacencyBonus').checked,
+    divinePowers:selectedDivinePowerIds(),
     inventory:inventory.map(item=>({
       uid:String(item.uid ?? ''),
       no:Number(item.no) || 0,
@@ -4752,7 +4855,7 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索布
     const currentResult = {
       best, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:meta.stopped, width:W, height:H, active:active.map(r=>r.slice()),
       inventory:inventory.map(x=>({...x,cells:cloneCells(x.cells)})),
-      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),mainTechniqueRole:'skill_and_stats',secondaryTechnique:selectedTechniqueName('secondary'),secondaryTechniqueRole:'stats_only',mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
+      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),mainTechniqueRole:'skill_and_stats',secondaryTechnique:selectedTechniqueName('secondary'),secondaryTechniqueRole:'stats_only',mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,divinePowers:selectedDivinePowerIds(),battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
       skipped:skipped.map(x=>({no:x.no,name:x.name,area:x.area,value:x.value})),manualItems,
       solverMeta:{fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount}
     };
@@ -4941,6 +5044,8 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   }
   const settings = lastResult?.settings || {};
   const techniqueLine = `主技能：${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}·${settings.mainTechniqueStar ?? (Number(document.getElementById('mainTechniqueStar').value)||0)}星${settings.secondaryTechnique?` + 副属性：${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}·${settings.secondaryTechniqueStar ?? (Number(document.getElementById('secondaryTechniqueStar').value)||0)}星`:''}`;
+  const divineIds = Array.isArray(settings.divinePowers) ? settings.divinePowers : selectedDivinePowerIds();
+  const divineLine = selectedDivinePowerDetails(divineIds).map(x=>`${x.attribute}·${x.name}`).join(' → ') || '未选择';
   const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
   const orderRows = (settings.releaseOrder || releaseOrder).map((uid,index)=>{
     const item = byUid.get(String(uid));
@@ -4948,7 +5053,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
     const state = item.combatStatus && item.combatStatus!=='none' ? `｜状态：${combatStatusLabel(item.combatStatus)}（${combatStatusDescription(item.combatStatus)}）` : '';
     return `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）${state}${item.effectNote?`｜备注：${item.effectNote}`:''}`;
   }).filter(Boolean).join('\n') || '尚未设置。';
-  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 布局伤害评分（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n布局伤害评分：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n注意：强攻、庇佑、寒冷等战斗状态已记录，但尚未计入本评分。\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
+  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n神通：${divineLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 布局伤害评分（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n布局伤害评分：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n注意：神通以及强攻、庇佑、寒冷等战斗状态已记录，但尚未计入本评分。\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
 function buildPrioritySummary(best){
   const countByItem = new Map();
@@ -4995,6 +5100,7 @@ function saveConfig(){
     secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
     customMainTechnique:document.getElementById('customMainTechnique').value,
     customSecondaryTechnique:document.getElementById('customSecondaryTechnique').value,
+    divinePowers:selectedDivinePowerIds(),
     battleMode:document.getElementById('battleMode').value,
     roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),
     releasePreset:document.getElementById('releasePreset').value,
@@ -5047,6 +5153,7 @@ function loadConfig(){
     document.getElementById('battleMode').value = data.battleMode==='pvp' ? 'pvp' : 'pve';
     document.getElementById('roundLimit').value = String(Math.max(1,Math.min(99,Math.floor(Number(data.roundLimit)||5))));
     document.getElementById('releasePreset').value = data.releasePreset==='cycle_body_thunder' ? 'cycle_body_thunder' : 'general';
+    setDivinePowerSelection(data.divinePowers);
     syncTechniqueSettings();
     document.getElementById('useAdjacencyBonus').checked = data.useAdjacencyBonus === true;
     lastResult = null; renderSpaceGrid(); renderItemsTable(); renderInventoryTable(); renderResultGrid(null);
@@ -5063,6 +5170,7 @@ function exportResult(){
     secondaryTechniqueRole:'stats_only',
     secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
     secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,
+    divinePowers:selectedDivinePowerDetails(),
     battleMode:document.getElementById('battleMode').value,
     roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),
     releaseOrder:releaseOrder.slice()
