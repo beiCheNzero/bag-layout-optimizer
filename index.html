@@ -87,6 +87,22 @@
   .attribute-role-list .attribute-chip{min-height:28px;padding:4px 10px;font-weight:700}
   .attribute-role-list .attribute-chip.secondary{border-color:#fbcfe8;background:#fdf2f8;color:#9d174d}
   .col-add-attribute select{width:100%;min-width:88px}
+  .build-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .build-field{display:flex;flex-direction:column;align-items:stretch;gap:5px;margin:0;padding:10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc}
+  .build-field>span{font-size:12px;font-weight:700;color:#475569}
+  .build-field select,.build-field input{width:100%}
+  .build-summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .release-panel{margin-top:12px;padding:12px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc}
+  .release-panel h3{margin:0 0 8px}
+  .release-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
+  .release-list{display:grid;gap:6px}
+  .release-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff}
+  .release-index{display:grid;place-items:center;width:28px;height:28px;border-radius:999px;background:#1d4ed8;color:#fff;font-weight:800}
+  .release-name{min-width:0;font-weight:700}
+  .release-name small{display:block;color:#64748b;font-weight:500}
+  .release-actions{display:flex;gap:3px}
+  .release-actions button{margin:0;padding:5px 8px}
+  .effect-select{min-width:104px;width:100%}
   .sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.2)}
   pre{white-space:pre-wrap;background:#0b1020;color:#e5e7eb;border-radius:10px;padding:10px;max-height:380px;overflow:auto}
   .empty{color:#6b7280;text-align:center;padding:16px;background:#f9fafb;border-radius:8px}
@@ -108,7 +124,7 @@
   .column-options input:checked+span::before{content:"✓";border-color:#2563eb;background:#2563eb}
   .column-options input:focus-visible+span{outline:2px solid #2563eb;outline-offset:2px}
   .hide-value-columns .col-value,.hide-bonus-rate-columns .col-bonus-rate,.hide-add-count-column .col-add-count{display:none}
-  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
+  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-effect{width:116px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
   .table-scroll td.col-empty{grid-column:1/-1;width:100%;justify-content:center;text-align:center}
   .inventory-cell-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;color:#475569}
   .inventory-cell-summary span{font-size:12px}
@@ -183,6 +199,7 @@
       grid-template-columns:minmax(0,1fr) minmax(0,1fr);
       grid-template-areas:
         "space space"
+        "build build"
         "library inventory"
         "result result"
         "help help";
@@ -192,6 +209,7 @@
     }
     main>section{display:contents}
     .space-card{grid-area:space}
+    .build-card{grid-area:build}
     .library-card{grid-area:library;min-height:0}
     .inventory-card{grid-area:inventory;min-height:0}
     .result-card{grid-area:result}
@@ -203,7 +221,7 @@
   }
   @media (max-width:899px){
     main{grid-template-columns:1fr}
-    .space-body,.output-wrap,.result-main,.recognition-layout{grid-template-columns:1fr}
+    .space-body,.output-wrap,.result-main,.recognition-layout,.build-grid{grid-template-columns:1fr}
     .table-scroll{overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
     .table-scroll table,.table-scroll tbody,.table-scroll tr,.table-scroll td{touch-action:pan-y}
     .library-scroll,.inventory-scroll{max-height:none}
@@ -240,6 +258,9 @@
     .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
     .recognition-preview-wrap{padding:6px}
     .semi-candidates{grid-template-columns:1fr}
+    .release-item{grid-template-columns:32px minmax(0,1fr) auto}
+    .release-item>.pill{grid-column:2/3;justify-self:start}
+    .release-actions{grid-column:3;grid-row:1/3}
     #resultGrid .cell.item-cell .attr-mark{font-size:8px;padding:1px 2px}
   }
 </style>
@@ -247,7 +268,7 @@
 <body class="hide-value-columns hide-bonus-rate-columns">
 <header>
   <h1>背包排列优化工具</h1>
-  <p>优先完整装入；相同主/副属性的法宝相邻才会触发加成，布局按实际总伤害最高计算。</p>
+  <p>选择主副功法、配置法宝与释放顺序，再搜索相同属性法宝的更优背包布局。</p>
 </header>
 <main>
   <section>
@@ -268,8 +289,24 @@
       </div>
     </div>
 
+    <div class="card build-card">
+      <h2>2. 功法与战斗设置</h2>
+      <div class="build-grid">
+        <label class="build-field"><span>主功法</span><select id="mainTechnique"></select></label>
+        <label class="build-field"><span>主功法属性</span><select id="mainTechniqueAttribute"></select></label>
+        <label class="build-field"><span>副功法</span><select id="secondaryTechnique"></select></label>
+        <label class="build-field"><span>副功法属性</span><select id="secondaryTechniqueAttribute"></select></label>
+        <label id="customMainTechniqueField" class="build-field" hidden><span>自定义主功法名称</span><input id="customMainTechnique" type="text" placeholder="输入主功法名称"></label>
+        <label id="customSecondaryTechniqueField" class="build-field" hidden><span>自定义副功法名称</span><input id="customSecondaryTechnique" type="text" placeholder="输入副功法名称"></label>
+        <label class="build-field"><span>战斗场景</span><select id="battleMode"><option value="pve">PVE</option><option value="pvp">PVP</option></select></label>
+        <label class="build-field"><span>计算回合</span><input id="roundLimit" type="number" min="1" max="99" step="1" value="5"></label>
+      </div>
+      <div id="buildSummary" class="build-summary"></div>
+      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。当前版本先记录功法、流派与回合，具体功法数值稍后补充。</div>
+    </div>
+
     <div class="card library-card">
-      <h2>2. 物品库</h2>
+      <h2>3. 物品库</h2>
       <div class="row">
         <label><input id="allowRotate" type="checkbox"> 允许旋转</label>
         <label><input id="allowMirror" type="checkbox"> 允许镜像</label>
@@ -308,7 +345,7 @@
     </div>
 
     <div class="card inventory-card">
-      <h2>3. 已有物品清单</h2>
+      <h2>4. 已有物品清单与释放顺序</h2>
       <div class="row">
         <button id="renumberBtn">按格数/品质重新编号</button>
         <button id="clearInventoryBtn" class="danger">清空清单</button>
@@ -316,7 +353,7 @@
       <div class="hint">每个条目代表一个实际拥有的法宝，属性由物品库加入时选择。只有属性相同的相邻法宝才会产生加成。</div>
       <div class="table-scroll inventory-scroll" aria-label="已有物品清单">
         <table id="inventoryTable">
-          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
+          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-effect">释放类型</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -325,10 +362,24 @@
         <span>总格数 <b id="inventoryCellTotal">0 / 42</b></span>
         <span id="inventoryCellBalance" class="cell-balance under">还差 42 格</span>
       </div>
+      <div class="release-panel">
+        <h3>法宝释放顺序</h3>
+        <div class="release-toolbar">
+          <label>自动排序规则
+            <select id="releasePreset">
+              <option value="general">通用：增益/减益 → 回怒/刷新 → 输出</option>
+              <option value="cycle_body_thunder">循环体雷：红武/主输出 → 护盾 → 刷新</option>
+            </select>
+          </label>
+          <button id="autoReleaseOrderBtn">按规则自动排序</button>
+        </div>
+        <div id="releaseOrderList" class="release-list"><div class="empty">添加法宝后可设置释放顺序。</div></div>
+        <div class="hint">先在上方为每件法宝选择释放类型，再自动排序；也可以用上下按钮逐件调整。</div>
+      </div>
     </div>
 
     <details class="card recognition-card">
-      <summary><h2>4. 截图导入识别</h2></summary>
+      <summary><h2>5. 截图导入识别</h2></summary>
       <div class="recognition-card-body">
       <div class="recognition-actions">
         <input id="recognitionFile" type="file" accept="image/*">
@@ -397,7 +448,7 @@
 
   <section>
     <div class="card result-card">
-      <h2>5. 自动搜索与当前最佳摆放结果</h2>
+      <h2>6. 自动搜索与当前最佳摆放结果</h2>
       <div class="output-wrap">
         <div class="result-main">
           <div class="result-grid-block">
@@ -453,9 +504,11 @@
     </div>
 
     <div class="card help-card">
-      <h2>6. 使用说明</h2>
+      <h2>7. 使用说明</h2>
       <ol>
         <li>先设置背包宽度、高度，并点击空间格子标记已解锁区域。</li>
+        <li>选择主功法和副功法；副功法不选时为单属性，选择后自动切换为多属性。</li>
+        <li>设置PVE/PVP和计划计算的战斗回合数；当前仅记录这些条件，待补充具体数值后参与伤害模拟。</li>
         <li>截图自动识别不准时，点击“开始半自动标注”：点物品任意格，选择正确形状，依次确认到全部格子完成。</li>
         <li>物品库默认单属性。需要第二种属性时勾选“多属性”，然后在操作前选择主属性或副属性。</li>
         <li>每种物品的“属性”默认都是主属性；勾选多属性后才可以改成副属性。</li>
@@ -467,6 +520,7 @@
         <li>只有属性相同的法宝相邻才会生效；主属性与副属性不同，因此两者相邻不会获得加成。</li>
         <li>开启“自身受加成”的红色三格物品按自身邻接规则计算；未开启的三格物品不因相邻物品给自身加成。</li>
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
+        <li>在已有物品清单中设置每件法宝的释放类型，再使用通用或循环体雷规则自动排序；排序后仍可手动上下调整。</li>
         <li>融合求解器会保留原有完整装入优先、BigInt 位掩码、单格延迟分配与字典序评分，并在完整方案上追加 LNS（局部摧毁 + 精确修复）搜索。</li>
       </ol>
       <p class="hint">有效邻接按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。</p>
@@ -504,6 +558,25 @@ const AREA_VALUE_BY_QUALITY = {
 };
 const SINGLE_RATE_BY_QUALITY = {green:5, blue:8, purple:12, gold:16};
 const DEFAULT_ATTRIBUTE = '主属性';
+const ATTRIBUTE_OPTIONS = ['金','木','水','火','土','雷','体','邪'];
+const TECHNIQUE_OPTIONS = [
+  {value:'金蝉蜕劫法', attribute:'金'}, {value:'千变金刚诀', attribute:'金'}, {value:'断金透骨功', attribute:'金'}, {value:'金芒解甲经', attribute:'金'},
+  {value:'万叶迷踪法', attribute:'木'}, {value:'天地同寿诀', attribute:'木'}, {value:'甲木回春', attribute:'木'},
+  {value:'凌霜三舞', attribute:'水'}, {value:'千凛玉章', attribute:'水'}, {value:'滔洪将倾', attribute:'水'},
+  {value:'拜火誓咒', attribute:'火'}, {value:'求火焚心卷', attribute:'火'}, {value:'三头六臂法', attribute:'火'},
+  {value:'地龙震魄', attribute:'土'}, {value:'坤岳镇魂', attribute:'土'}, {value:'六合震荡诀', attribute:'土'}, {value:'地龙镇破功', attribute:'土'},
+  {value:'五雷禁行诀', attribute:'雷'}, {value:'聚雷', attribute:'雷'}, {value:'正一雷法', attribute:'雷'},
+  {value:'不动撼世相', attribute:'体'}, {value:'奇门遁甲', attribute:'体'},
+  {value:'祭血咒天诀', attribute:'邪'}, {value:'阴阳同济大法', attribute:'邪'}
+];
+const EFFECT_OPTIONS = [
+  {value:'buff', label:'增益'},
+  {value:'debuff', label:'减益'},
+  {value:'shield', label:'护盾/生存'},
+  {value:'rage_refresh', label:'回怒/刷新'},
+  {value:'output', label:'普通输出'},
+  {value:'main_output', label:'主要输出'}
+];
 // 默认邻接优先级只看占用格数：格数越多，越优先获得更多不同邻居。
 const SELF_PRIORITY_TIERS = [
   {id:'area_5_plus', label:'五格及以上'},
@@ -517,6 +590,7 @@ let W = 7, H = 6;
 let active = [];
 let itemDefs = [];
 let inventory = [];
+let releaseOrder = [];
 let nextItemNo = 1;
 let lastResult = null;
 let retainedBestRecord = null;
@@ -657,16 +731,19 @@ function normalizeAddAttributeRole(role){ return isMultiAttributeMode() && role 
 function selectedAddAttribute(item){ return normalizeAddAttributeRole(item?.addAttributeRole) === 'secondary' ? secondaryAttributeName() : primaryAttributeName(); }
 function syncAttributeModeControls(){
   const multi = isMultiAttributeMode();
+  const primaryChip = document.querySelector('.attribute-role-list .attribute-chip.primary');
   const chip = document.getElementById('secondaryAttributeChip');
+  if(primaryChip) primaryChip.textContent = `主属性：${primaryAttributeName()}`;
+  if(chip) chip.textContent = `副属性：${secondaryAttributeName()}`;
   if(chip) chip.hidden = !multi;
   if(!multi) itemDefs.forEach(item=>{ item.addAttributeRole = 'primary'; });
 }
 function addAttributeSelectHtml(item,idx){
   const role = normalizeAddAttributeRole(item.addAttributeRole);
   if(!isMultiAttributeMode()){
-    return `<span class="attribute-chip primary">主属性</span>`;
+    return `<span class="attribute-chip primary">主属性：${escapeHtml(primaryAttributeName())}</span>`;
   }
-  return `<select data-lib-k="addAttributeRole" data-i="${idx}"><option value="primary" ${role==='primary'?'selected':''}>主属性</option><option value="secondary" ${role==='secondary'?'selected':''}>副属性</option></select>`;
+  return `<select data-lib-k="addAttributeRole" data-i="${idx}"><option value="primary" ${role==='primary'?'selected':''}>主属性：${escapeHtml(primaryAttributeName())}</option><option value="secondary" ${role==='secondary'?'selected':''}>副属性：${escapeHtml(secondaryAttributeName())}</option></select>`;
 }
 function defaultBonusRate(area, quality, threeSelfBonus){
   const q = normalizeQualityForArea(quality, area);
@@ -674,6 +751,12 @@ function defaultBonusRate(area, quality, threeSelfBonus){
   if(area >= 4) return q === 'gold' || q === 'red' ? 40 : 20;
   if(area === 3 && threeSelfBonus) return 20;
   return 0;
+}
+function defaultEffectType(area){
+  if(area <= 1) return 'buff';
+  if(area === 2) return 'debuff';
+  if(area === 3) return 'output';
+  return 'main_output';
 }
 function normalizeItemRecord(item, keepManualRate=false){
   const area = item.cells ? item.cells.length : 0;
@@ -694,12 +777,78 @@ function normalizeItemRecord(item, keepManualRate=false){
   let bonusRate = defaultBonusRate(area, quality, threeSelfBonus);
   const attributes = normalizeAttributes(item.attributes);
   const addAttributeRole = item.addAttributeRole === 'secondary' ? 'secondary' : 'primary';
-  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, enabled:item.enabled !== false};
+  const effectType = EFFECT_OPTIONS.some(x=>x.value===item.effectType) ? item.effectType : defaultEffectType(area);
+  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, effectType, enabled:item.enabled !== false};
+}
+function techniqueOptionsHtml(includeNone=false){
+  const grouped = ATTRIBUTE_OPTIONS.map(attribute=>{
+    const rows = TECHNIQUE_OPTIONS.filter(x=>x.attribute===attribute).map(x=>`<option value="${escapeAttr(x.value)}" data-attribute="${attribute}">${attribute}｜${escapeHtml(x.value)}</option>`).join('');
+    return `<optgroup label="${attribute}系">${rows}</optgroup>`;
+  }).join('');
+  return `${includeNone?'<option value="">不选择副功法</option>':''}${grouped}<option value="custom">自定义功法</option>`;
+}
+function attributeOptionsHtml(selected='金'){
+  return ATTRIBUTE_OPTIONS.map(x=>`<option value="${x}" ${x===selected?'selected':''}>${x}</option>`).join('');
+}
+function initializeTechniqueControls(){
+  const main = document.getElementById('mainTechnique');
+  const secondary = document.getElementById('secondaryTechnique');
+  main.innerHTML = techniqueOptionsHtml(false);
+  secondary.innerHTML = techniqueOptionsHtml(true);
+  main.value = '金蝉蜕劫法';
+  secondary.value = '';
+  document.getElementById('mainTechniqueAttribute').innerHTML = attributeOptionsHtml('金');
+  document.getElementById('secondaryTechniqueAttribute').innerHTML = attributeOptionsHtml('木');
+  syncTechniqueSettings();
+}
+function selectedTechniqueName(scope){
+  const select = document.getElementById(scope==='main'?'mainTechnique':'secondaryTechnique');
+  if(!select || !select.value) return '';
+  if(select.value!=='custom') return select.value;
+  return (document.getElementById(scope==='main'?'customMainTechnique':'customSecondaryTechnique')?.value || '').trim() || '自定义功法';
+}
+function syncTechniqueAttribute(scope){
+  const technique = document.getElementById(scope==='main'?'mainTechnique':'secondaryTechnique');
+  const attribute = document.getElementById(scope==='main'?'mainTechniqueAttribute':'secondaryTechniqueAttribute');
+  if(!technique || !attribute) return;
+  const known = TECHNIQUE_OPTIONS.find(x=>x.value===technique.value);
+  if(known) attribute.value = known.attribute;
+}
+function syncTechniqueSettings(){
+  const mainSelect = document.getElementById('mainTechnique');
+  const secondarySelect = document.getElementById('secondaryTechnique');
+  const mainAttribute = document.getElementById('mainTechniqueAttribute');
+  const secondaryAttribute = document.getElementById('secondaryTechniqueAttribute');
+  if(!mainSelect || !secondarySelect || !mainAttribute || !secondaryAttribute) return;
+  const hasSecondary = !!secondarySelect.value;
+  document.getElementById('customMainTechniqueField').hidden = mainSelect.value!=='custom';
+  document.getElementById('customSecondaryTechniqueField').hidden = secondarySelect.value!=='custom';
+  secondaryAttribute.disabled = !hasSecondary;
+  document.getElementById('multiAttributeMode').checked = hasSecondary;
+  document.getElementById('primaryAttribute').value = mainAttribute.value || '金';
+  document.getElementById('secondaryAttribute').value = secondaryAttribute.value || '木';
+  syncAttributeModeControls();
+  renderBuildSummary();
+  if(itemDefs.length) renderItemsTable();
+  if(inventory.length || document.querySelector('#inventoryTable tbody')) renderInventoryTable();
+  if(lastResult?.best) renderResultGrid(lastResult.best);
+}
+function renderBuildSummary(){
+  const box = document.getElementById('buildSummary');
+  if(!box) return;
+  const mainName = selectedTechniqueName('main');
+  const secondaryName = selectedTechniqueName('secondary');
+  const mainAttribute = document.getElementById('mainTechniqueAttribute')?.value || '金';
+  const secondaryAttribute = document.getElementById('secondaryTechniqueAttribute')?.value || '';
+  const mode = document.getElementById('battleMode')?.value==='pvp' ? 'PVP' : 'PVE';
+  const rounds = Math.max(1, Math.floor(Number(document.getElementById('roundLimit')?.value)||1));
+  box.innerHTML = `<span class="attribute-chip primary">主：${escapeHtml(mainAttribute)}｜${escapeHtml(mainName)}</span>${secondaryName?`<span class="attribute-chip secondary">副：${escapeHtml(secondaryAttribute)}｜${escapeHtml(secondaryName)}</span>`:''}<span class="pill gray">${mode}｜${rounds} 回合</span>`;
 }
 function init(){
   active = Array.from({length:6},()=>Array(7).fill(true));
   itemDefs = cloneItems(DEFAULT_ITEMS);
   configureWorkerCountControl();
+  initializeTechniqueControls();
   bindEvents();
   renderQualitySelect(document.getElementById('customQuality'), 'green', false, 1);
   syncAttributeModeControls();
@@ -726,6 +875,24 @@ function configureWorkerCountControl(){
 }
 
 function bindEvents(){
+  document.getElementById('mainTechnique').addEventListener('change', ()=>{
+    syncTechniqueAttribute('main');
+    syncTechniqueSettings();
+  });
+  document.getElementById('secondaryTechnique').addEventListener('change', ()=>{
+    syncTechniqueAttribute('secondary');
+    syncTechniqueSettings();
+  });
+  document.getElementById('mainTechniqueAttribute').addEventListener('change', syncTechniqueSettings);
+  document.getElementById('secondaryTechniqueAttribute').addEventListener('change', syncTechniqueSettings);
+  document.getElementById('customMainTechnique').addEventListener('input', renderBuildSummary);
+  document.getElementById('customSecondaryTechnique').addEventListener('input', renderBuildSummary);
+  document.getElementById('battleMode').addEventListener('change', renderBuildSummary);
+  document.getElementById('roundLimit').addEventListener('change', e=>{
+    e.target.value = String(Math.max(1, Math.min(99, Math.floor(Number(e.target.value)||1))));
+    renderBuildSummary();
+  });
+  document.getElementById('autoReleaseOrderBtn').addEventListener('click', autoSortReleaseOrder);
   document.getElementById('resizeBtn').addEventListener('click', applySize);
   document.getElementById('fullBtn').addEventListener('click', ()=>{
     for(let r=0;r<H;r++) for(let c=0;c<W;c++) active[r][c]=true;
@@ -748,6 +915,7 @@ function bindEvents(){
   document.getElementById('clearInventoryBtn').addEventListener('click', ()=>{
     if(confirm('确定清空已有物品清单？')){
       inventory = [];
+      releaseOrder = [];
       nextItemNo = 1;
       lastResult = null;
       renderInventoryTable();
@@ -972,16 +1140,64 @@ function renderItemsTable(){
   });
 }
 
+function effectSelectHtml(it, idx){
+  return `<select class="effect-select" data-inv-k="effectType" data-i="${idx}">${EFFECT_OPTIONS.map(x=>`<option value="${x.value}" ${it.effectType===x.value?'selected':''}>${x.label}</option>`).join('')}</select>`;
+}
+function effectLabel(value){ return EFFECT_OPTIONS.find(x=>x.value===value)?.label || '普通输出'; }
+function normalizeReleaseOrder(){
+  const valid = new Set(inventory.map(x=>String(x.uid)));
+  const seen = new Set();
+  releaseOrder = releaseOrder.map(String).filter(uid=>valid.has(uid) && !seen.has(uid) && seen.add(uid));
+  for(const item of inventory){
+    const uid = String(item.uid);
+    if(!seen.has(uid)){ releaseOrder.push(uid); seen.add(uid); }
+  }
+}
+function renderReleaseOrder(){
+  const root = document.getElementById('releaseOrderList');
+  if(!root) return;
+  normalizeReleaseOrder();
+  if(!inventory.length){ root.innerHTML = '<div class="empty">添加法宝后可设置释放顺序。</div>'; return; }
+  const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
+  root.innerHTML = releaseOrder.map((uid,index)=>{
+    const item = byUid.get(uid);
+    if(!item) return '';
+    return `<div class="release-item"><span class="release-index">${index+1}</span><div class="release-name">#${item.no} ${escapeHtml(item.name)}<small>${escapeHtml(attributeLabel(item))}｜${item.cells.length}格｜${qualityName(item.quality)}</small></div><span class="pill gray">${effectLabel(item.effectType)}</span><div class="release-actions"><button data-release-move="up" data-uid="${escapeAttr(uid)}" ${index===0?'disabled':''}>↑</button><button data-release-move="down" data-uid="${escapeAttr(uid)}" ${index===releaseOrder.length-1?'disabled':''}>↓</button></div></div>`;
+  }).join('');
+  root.querySelectorAll('button[data-release-move]').forEach(button=>button.addEventListener('click', e=>{
+    const uid = String(e.currentTarget.dataset.uid);
+    const index = releaseOrder.indexOf(uid);
+    const target = e.currentTarget.dataset.releaseMove==='up' ? index-1 : index+1;
+    if(index<0 || target<0 || target>=releaseOrder.length) return;
+    [releaseOrder[index],releaseOrder[target]] = [releaseOrder[target],releaseOrder[index]];
+    renderReleaseOrder();
+  }));
+}
+function autoSortReleaseOrder(){
+  normalizeReleaseOrder();
+  const preset = document.getElementById('releasePreset').value;
+  const general = {buff:0,debuff:1,shield:2,rage_refresh:3,output:4,main_output:5};
+  const cycle = {main_output:0,output:1,shield:2,buff:3,rage_refresh:4,debuff:5};
+  const rank = preset==='cycle_body_thunder' ? cycle : general;
+  const oldIndex = new Map(releaseOrder.map((uid,index)=>[uid,index]));
+  releaseOrder.sort((a,b)=>{
+    const left = inventory.find(x=>String(x.uid)===a), right = inventory.find(x=>String(x.uid)===b);
+    return (rank[left?.effectType]??99)-(rank[right?.effectType]??99) || (oldIndex.get(a)??0)-(oldIndex.get(b)??0);
+  });
+  renderReleaseOrder();
+}
+
 function renderInventoryTable(){
   const tbody = document.querySelector('#inventoryTable tbody');
   tbody.innerHTML = '';
-  inventory = inventory.map(x=>normalizeItemRecord(x, true));
+  inventory = inventory.map((x,index)=>normalizeItemRecord({...x,uid:x.uid || `legacy-${x.no || index+1}`}, true));
   if(inventory.length === 0){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="col-empty" colspan="11"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
+    tr.innerHTML = `<td class="col-empty" colspan="12"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
     tbody.appendChild(tr);
     updateTableColumnLayout();
     renderInventoryCellSummary();
+    renderReleaseOrder();
     return;
   }
   inventory.forEach((it, idx)=>{
@@ -995,6 +1211,7 @@ function renderInventoryTable(){
       <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area)}</td>
       <td class="col-awakened" data-label="红武觉醒">${redAwakenedControlHtml(it,'inv',idx)}</td>
       <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="${attributeChipClass(x)}">${escapeHtml(x)}</span>`).join('')}</div></td>
+      <td class="col-effect" data-label="释放类型">${effectSelectHtml(it,idx)}</td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -1016,6 +1233,7 @@ function renderInventoryTable(){
       if(k==='value') inventory[i].value = Math.max(0, Number(e.target.value)||0);
       if(k==='bonusRate') inventory[i].bonusRate = Math.max(0, Number(e.target.value)||0);
       if(k==='redAwakened') inventory[i].redAwakened = e.target.checked;
+      if(k==='effectType') inventory[i].effectType = e.target.value;
       if(k==='customPriority'){
         const raw = String(e.target.value || '').trim();
         inventory[i].customPriority = raw === '' ? null : Math.max(1, Math.min(99, Math.floor(Number(raw)||1)));
@@ -1046,6 +1264,7 @@ function renderInventoryTable(){
   });
   updateTableColumnLayout();
   renderInventoryCellSummary();
+  renderReleaseOrder();
 }
 
 function renderInventoryCellSummary(){
@@ -4430,7 +4649,7 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
     const currentResult = {
       best, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:meta.stopped, width:W, height:H, active:active.map(r=>r.slice()),
       inventory:inventory.map(x=>({...x,cells:cloneCells(x.cells)})),
-      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
+      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),secondaryTechnique:selectedTechniqueName('secondary'),mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
       skipped:skipped.map(x=>({no:x.no,name:x.name,area:x.area,value:x.value})),manualItems,
       solverMeta:{fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount}
     };
@@ -4617,7 +4836,14 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
     else if(as||bs) singleMultiAdj++;
     else multiMultiAdj++;
   }
-  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
+  const settings = lastResult?.settings || {};
+  const techniqueLine = `${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}${settings.secondaryTechnique?` + ${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}`:''}`;
+  const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
+  const orderRows = (settings.releaseOrder || releaseOrder).map((uid,index)=>{
+    const item = byUid.get(String(uid));
+    return item ? `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）` : '';
+  }).filter(Boolean).join('\n') || '尚未设置。';
+  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
 function buildPrioritySummary(best){
   const countByItem = new Map();
@@ -4653,9 +4879,18 @@ function eventLine(e){
 
 function saveConfig(){
   const data = {
-    W,H,active,itemDefs,inventory,nextItemNo,
+    W,H,active,itemDefs,inventory,nextItemNo,releaseOrder,
     allowRotate:document.getElementById('allowRotate').checked,
     allowMirror:document.getElementById('allowMirror').checked,
+    mainTechnique:document.getElementById('mainTechnique').value,
+    secondaryTechnique:document.getElementById('secondaryTechnique').value,
+    mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,
+    secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
+    customMainTechnique:document.getElementById('customMainTechnique').value,
+    customSecondaryTechnique:document.getElementById('customSecondaryTechnique').value,
+    battleMode:document.getElementById('battleMode').value,
+    roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),
+    releasePreset:document.getElementById('releasePreset').value,
     primaryAttribute:primaryAttributeName(),
     secondaryAttribute:secondaryAttributeName(),
     multiAttributeMode:isMultiAttributeMode(),
@@ -4682,21 +4917,41 @@ function loadConfig(){
         for(let i=0;i<qty;i++) inventory.push(normalizeItemRecord({uid:'migrate-'+Date.now()+'-'+no, no:no++, typeId:def.id, typeName:def.name, name:def.name, cells:cloneCells(def.cells), quality:def.quality, value:def.value, bonusRate:def.bonusRate, threeSelfBonus:!!def.threeSelfBonus}, true));
       }
     }
+    releaseOrder = Array.isArray(data.releaseOrder) ? data.releaseOrder.map(String) : [];
     nextItemNo = data.nextItemNo || (inventory.reduce((m,x)=>Math.max(m, Number(x.no)||0),0)+1);
     document.getElementById('gridW').value = W; document.getElementById('gridH').value = H;
     document.getElementById('allowRotate').checked = data.allowRotate === true;
     document.getElementById('allowMirror').checked = !!data.allowMirror;
-    document.getElementById('primaryAttribute').value = normalizeAttributes(data.primaryAttribute || DEFAULT_ATTRIBUTE)[0];
-    document.getElementById('secondaryAttribute').value = normalizeAttributes(data.secondaryAttribute || '副属性')[0];
-    document.getElementById('multiAttributeMode').checked = !!data.multiAttributeMode;
-    syncAttributeModeControls();
+    const mainTechnique = document.getElementById('mainTechnique');
+    const secondaryTechnique = document.getElementById('secondaryTechnique');
+    mainTechnique.value = [...mainTechnique.options].some(x=>x.value===data.mainTechnique) ? data.mainTechnique : '金蝉蜕劫法';
+    secondaryTechnique.value = [...secondaryTechnique.options].some(x=>x.value===data.secondaryTechnique) ? data.secondaryTechnique : '';
+    const savedMainAttribute = ATTRIBUTE_OPTIONS.includes(data.mainTechniqueAttribute) ? data.mainTechniqueAttribute : normalizeAttributes(data.primaryAttribute || '金')[0];
+    const savedSecondaryAttribute = ATTRIBUTE_OPTIONS.includes(data.secondaryTechniqueAttribute) ? data.secondaryTechniqueAttribute : normalizeAttributes(data.secondaryAttribute || '木')[0];
+    document.getElementById('mainTechniqueAttribute').value = ATTRIBUTE_OPTIONS.includes(savedMainAttribute) ? savedMainAttribute : '金';
+    document.getElementById('secondaryTechniqueAttribute').value = ATTRIBUTE_OPTIONS.includes(savedSecondaryAttribute) ? savedSecondaryAttribute : '木';
+    document.getElementById('customMainTechnique').value = data.customMainTechnique || '';
+    document.getElementById('customSecondaryTechnique').value = data.customSecondaryTechnique || '';
+    document.getElementById('battleMode').value = data.battleMode==='pvp' ? 'pvp' : 'pve';
+    document.getElementById('roundLimit').value = String(Math.max(1,Math.min(99,Math.floor(Number(data.roundLimit)||5))));
+    document.getElementById('releasePreset').value = data.releasePreset==='cycle_body_thunder' ? 'cycle_body_thunder' : 'general';
+    syncTechniqueSettings();
     document.getElementById('useAdjacencyBonus').checked = data.useAdjacencyBonus === true;
     lastResult = null; renderSpaceGrid(); renderItemsTable(); renderInventoryTable(); renderResultGrid(null);
   }catch(e){ alert('读取失败：配置数据损坏。'); }
 }
 
 function exportResult(){
-  const data = lastResult || {message:'尚未计算结果', W, H, active, itemDefs, inventory};
+  const build = {
+    mainTechnique:selectedTechniqueName('main'),
+    mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,
+    secondaryTechnique:selectedTechniqueName('secondary'),
+    secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
+    battleMode:document.getElementById('battleMode').value,
+    roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),
+    releaseOrder:releaseOrder.slice()
+  };
+  const data = lastResult ? {...lastResult,build} : {message:'尚未计算结果', W, H, active, itemDefs, inventory, build};
   const blob = new Blob([JSON.stringify(data, (k,v)=> typeof v === 'bigint' ? v.toString() : v, 2)], {type:'application/json;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
