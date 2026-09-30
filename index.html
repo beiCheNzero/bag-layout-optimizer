@@ -308,7 +308,7 @@
       </div>
       <div id="buildSummary" class="build-summary"></div>
       <div id="techniqueEffects" class="technique-effects"></div>
-      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。星级会影响功法属性或技能效果；当前先记录星级与已核实的基础效果，精确升星数值待补充。</div>
+      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。“品质待补”表示功法名称已收录，但公开资料尚不足以确认品质和完整技能文本，并非功法不存在。星级会影响功法属性或技能效果；当前先记录星级与已核实的基础效果，精确升星数值待补充。</div>
     </div>
 
     <div class="card library-card">
@@ -565,36 +565,40 @@ const AREA_VALUE_BY_QUALITY = {
 const SINGLE_RATE_BY_QUALITY = {green:5, blue:8, purple:12, gold:16};
 const DEFAULT_ATTRIBUTE = '主属性';
 const ATTRIBUTE_OPTIONS = ['金','木','水','火','土','雷','体','邪'];
-const TECHNIQUE_QUALITY_LABEL = {gold:'金', purple:'紫', blue:'蓝', limited:'限定', unknown:'待核实'};
+const TECHNIQUE_QUALITY_LABEL = {gold:'金', purple:'紫', blue:'蓝', limited:'限定', unknown:'品质待补'};
 const TECHNIQUE_OPTIONS = [
   {value:'金蝉蜕劫法', attribute:'金', quality:'gold', effect:'清除自身负面效果，造成金属性伤害；消耗强攻可追加伤害。'},
   {value:'千变金刚诀', attribute:'金', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'断金透骨功', attribute:'金', quality:'gold', effect:'造成金属性伤害；目标生命较低时追加伤害，并按穿甲层数造成额外真实伤害。'},
   {value:'金芒解甲经', attribute:'金', quality:'purple', effect:'造成金属性伤害，并按目标穿甲/穿甲·虚层数追加真实伤害。'},
-  {value:'万叶迷踪法', attribute:'木', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'金光道诀', attribute:'金', quality:'blue', effect:'短时间提升暴击率，并造成金属性伤害。'},
+  {value:'万叶迷踪法', attribute:'木', quality:'gold', effect:'提升闪避与治疗方向能力；完整技能文本待补充。'},
   {value:'天地同寿诀', attribute:'木', quality:'gold', effect:'造成木属性伤害；将孢子转化为血藤蔓，并按孢子层数治疗。'},
   {value:'甲木回春', attribute:'木', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'灵孢寄生诀', attribute:'木', quality:'purple', effect:'造成木属性伤害；按孢子层数附加血藤蔓，血藤蔓可持续偷取生命。'},
   {value:'朽毒归元谱', attribute:'木', quality:'purple', effect:'按中毒层数造成真实伤害，再造成木属性伤害并施加中毒。'},
   {value:'凌霜三舞', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
-  {value:'千凛玉章', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'千凛玉章', attribute:'水', quality:'purple', effect:'释放多轮冰雨；伤害随寒冷层数提高，并继续叠加寒冷。'},
   {value:'滔洪将倾', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'玄冰溯流法', attribute:'水', quality:'purple', effect:'短时间提升反击率与反击伤害，并造成水属性伤害。'},
+  {value:'叠浪凝冰诀', attribute:'水', quality:'purple', effect:'连续释放冰锥，并有概率附加冰冻印记。'},
   {value:'流水道典', attribute:'水', quality:'blue', effect:'基础效果资料待补充。'},
-  {value:'拜火誓咒', attribute:'火', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'拜火誓咒', attribute:'火', quality:'gold', effect:'以高频怒气技为核心，兼具续航与怒气循环；完整技能文本待补充。'},
   {value:'求火焚星卷', attribute:'火', quality:'purple', effect:'战斗前期获得吸血；怒气技进入炎神附体并召唤陨石，重复释放可增加陨石数量。'},
   {value:'三头六臂法', attribute:'火', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'真炎连霄经', attribute:'火', quality:'purple', effect:'提升连击率与连击伤害并释放火球；按火热层数追加伤害。'},
   {value:'赤炼法经', attribute:'火', quality:'purple', effect:'连续释放火浪，每段施加灼烧。'},
   {value:'焰波焚尽法', attribute:'火', quality:'purple', effect:'连续释放四次火浪，每段施加灼烧。'},
   {value:'癫火连打', attribute:'火', quality:'gold', effect:'提升连击率与连击伤害并释放火球；按火热层数追加伤害，同时回复已损生命。'},
-  {value:'地龙震魄', attribute:'土', quality:'gold', effect:'基础效果资料待补充。'},
+  {value:'焰浪滔天式', attribute:'火', quality:'gold', effect:'连续释放多道火焰波，每段造成火属性伤害并施加灼烧。'},
+  {value:'地龙震魄功', attribute:'土', quality:'gold', effect:'短时间提升击晕率和击晕伤害，造成土属性伤害并有概率附加击晕印记。'},
   {value:'坤岳镇魂诀', attribute:'土', quality:'purple', effect:'已核实为紫色土系功法，具体技能文本待补充。'},
   {value:'六合震荡诀', attribute:'土', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'地龙镇破功', attribute:'土', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'地脉倾轧诀', attribute:'土', quality:'purple', effect:'造成土属性伤害，并触发多次倾轧。'},
   {value:'厚土炼体法', attribute:'土', quality:'purple', effect:'造成土属性伤害，并按庇佑层数追加伤害。'},
   {value:'玄岳诀', attribute:'土', quality:'blue', effect:'基础效果资料待补充。'},
-  {value:'五雷禁行诀', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'五雷禁行诀', attribute:'雷', quality:'gold', effect:'雷系缴械控制功法，可对已缴械目标进一步限制法宝使用；完整技能文本待补充。'},
   {value:'聚雷', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'正一雷法', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
   {value:'雷殛兵解法', attribute:'雷', quality:'purple', effect:'已核实为紫色雷系功法，含吸血/缴械方向机制，完整技能文本待补充。'},
@@ -817,7 +821,7 @@ function normalizeItemRecord(item, keepManualRate=false){
 }
 function techniqueOptionsHtml(includeNone=false){
   const grouped = ATTRIBUTE_OPTIONS.map(attribute=>{
-    const rows = TECHNIQUE_OPTIONS.filter(x=>x.attribute===attribute).map(x=>`<option value="${escapeAttr(x.value)}" data-attribute="${attribute}">[${TECHNIQUE_QUALITY_LABEL[x.quality] || '待核实'}] ${escapeHtml(x.value)}</option>`).join('');
+    const rows = TECHNIQUE_OPTIONS.filter(x=>x.attribute===attribute).map(x=>`<option value="${escapeAttr(x.value)}" data-attribute="${attribute}">[${TECHNIQUE_QUALITY_LABEL[x.quality] || '品质待补'}] ${escapeHtml(x.value)}</option>`).join('');
     return `<optgroup label="${attribute}系">${rows}</optgroup>`;
   }).join('');
   return `${includeNone?'<option value="">不选择副功法</option>':''}${grouped}<option value="custom">自定义功法</option>`;
@@ -898,7 +902,7 @@ function renderTechniqueEffects(){
     const star = Math.max(0, Math.min(4, Number(document.getElementById(scope==='main'?'mainTechniqueStar':'secondaryTechniqueStar')?.value)||0));
     const known = TECHNIQUE_OPTIONS.find(x=>x.value===select.value);
     const name = selectedTechniqueName(scope);
-    const quality = known ? (TECHNIQUE_QUALITY_LABEL[known.quality] || '待核实') : '自定义';
+    const quality = known ? (TECHNIQUE_QUALITY_LABEL[known.quality] || '品质待补') : '自定义';
     const effect = known?.effect || '自定义功法尚未填写效果。';
     return `<div class="technique-effect-card"><b>${scope==='main'?'主功法':'副功法'}｜${escapeHtml(name)}｜${quality}｜${star}星</b>${escapeHtml(effect)}<br><span class="hint">星级已记录；具体升星增量待补充。</span></div>`;
   }).filter(Boolean);
@@ -4991,8 +4995,9 @@ function loadConfig(){
     document.getElementById('allowMirror').checked = !!data.allowMirror;
     const mainTechnique = document.getElementById('mainTechnique');
     const secondaryTechnique = document.getElementById('secondaryTechnique');
-    const savedMainTechnique = data.mainTechnique==='求火焚心卷' ? '求火焚星卷' : data.mainTechnique;
-    const savedSecondaryTechnique = data.secondaryTechnique==='求火焚心卷' ? '求火焚星卷' : data.secondaryTechnique;
+    const techniqueAliases = {'求火焚心卷':'求火焚星卷','地龙震魄':'地龙震魄功'};
+    const savedMainTechnique = techniqueAliases[data.mainTechnique] || data.mainTechnique;
+    const savedSecondaryTechnique = techniqueAliases[data.secondaryTechnique] || data.secondaryTechnique;
     mainTechnique.value = [...mainTechnique.options].some(x=>x.value===savedMainTechnique) ? savedMainTechnique : '金蝉蜕劫法';
     secondaryTechnique.value = [...secondaryTechnique.options].some(x=>x.value===savedSecondaryTechnique) ? savedSecondaryTechnique : '';
     document.getElementById('mainTechniqueStar').value = String(Math.max(0,Math.min(4,Number(data.mainTechniqueStar)||0)));
