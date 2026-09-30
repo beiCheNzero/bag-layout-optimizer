@@ -127,7 +127,7 @@
   .column-options input:checked+span::before{content:"✓";border-color:#2563eb;background:#2563eb}
   .column-options input:focus-visible+span{outline:2px solid #2563eb;outline-offset:2px}
   .hide-value-columns .col-value,.hide-bonus-rate-columns .col-bonus-rate,.hide-add-count-column .col-add-count{display:none}
-  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-effect{width:116px}.col-effect-note{width:220px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
+  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-effect{width:116px}.col-combat-status{width:150px}.col-effect-note{width:220px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
   .table-scroll td.col-empty{grid-column:1/-1;width:100%;justify-content:center;text-align:center}
   .inventory-cell-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;color:#475569}
   .inventory-cell-summary span{font-size:12px}
@@ -356,10 +356,10 @@
         <button id="renumberBtn">按格数/品质重新编号</button>
         <button id="clearInventoryBtn" class="danger">清空清单</button>
       </div>
-      <div class="hint">每个条目代表一个实际拥有的法宝。请将通用形状名称改成实际法宝名，并填写“具体效果”；不同法宝的相邻加成目标可能是攻击、暴伤、防御、治疗或法宝伤害，不能只按形状推断。</div>
+      <div class="hint">每个条目代表一个实际拥有的法宝。请将通用形状名称改成实际法宝名，选择它产生的“战斗状态”并填写效果备注。红法宝除基础三维和相邻加成外，还可能提供强攻、孢子、寒冷、庇佑、灼烧、聚雷等状态；当前先记录状态，未填写触发层数时不并入数值计算。</div>
       <div class="table-scroll inventory-scroll" aria-label="已有物品清单">
         <table id="inventoryTable">
-          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-effect">释放类型</th><th class="col-effect-note">具体效果</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
+          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-effect">释放类型</th><th class="col-combat-status">战斗状态</th><th class="col-effect-note">效果备注</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -480,7 +480,7 @@
               <label id="workerCountLabel" hidden>Worker 数量 <input id="workerCount" type="number" min="2" max="12" step="1" value="2"><span id="workerCountHint" class="hint"></span></label>
             </div>
             <div class="row">
-              <button id="solveBtn" class="primary">搜索最高伤害布局</button>
+              <button id="solveBtn" class="primary">搜索最高布局评分</button>
               <button id="cancelSolveBtn" class="danger" disabled>停止计算</button>
               <button id="exportBtn">导出结果 JSON</button>
               <button id="saveBtn">保存当前配置</button>
@@ -491,7 +491,7 @@
         </div>
         <div class="result-summary">
           <div class="stats">
-            <div class="stat">实际总伤害<b id="statScore">-</b></div>
+            <div class="stat">布局伤害评分<b id="statScore">-</b></div>
             <div class="stat">基础伤害<b id="statBase">-</b></div>
             <div class="stat">相邻加成<b id="statBonus">-</b></div>
             <div class="stat">优先法宝邻接<b id="statPriority">-</b></div>
@@ -527,9 +527,10 @@
         <li>开启“自身受加成”的红色三格物品按自身邻接规则计算；未开启的三格物品不因相邻物品给自身加成。</li>
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
         <li>在已有物品清单中设置每件法宝的释放类型，再使用通用或循环体雷规则自动排序；排序后仍可手动上下调整。</li>
+        <li>红法宝还需选择实际产生的战斗状态，例如强攻、孢子、寒冷、庇佑、灼烧或聚雷；同属性、同形状的不同法宝也可能具有不同效果。</li>
         <li>融合求解器会保留原有完整装入优先、BigInt 位掩码、单格延迟分配与字典序评分，并在完整方案上追加 LNS（局部摧毁 + 精确修复）搜索。</li>
       </ol>
-      <p class="hint">有效邻接按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。求解比较顺序为：完整装入、实际总伤害、手动邻接优先级、默认格数优先级、有效邻接数量。</p>
+      <p class="hint">有效邻接按“属性相同的相邻法宝”计算，同一对法宝即使接触多条边也只计一次。当前布局伤害评分只包含基础伤害与同属性相邻加成，不包含强攻等战斗状态；求解比较顺序为：完整装入、布局伤害评分、手动邻接优先级、默认格数优先级、有效邻接数量。</p>
     </div>
   </section>
 </main>
@@ -614,6 +615,25 @@ const EFFECT_OPTIONS = [
   {value:'rage_refresh', label:'回怒/刷新'},
   {value:'output', label:'普通输出'},
   {value:'main_output', label:'主要输出'}
+];
+const COMBAT_STATUS_OPTIONS = [
+  {value:'none', label:'未设置', description:'尚未指定法宝产生的战斗状态。'},
+  {value:'strong_attack', label:'强攻', description:'每层提高攻击力，同时降低自身减伤，持续1回合。'},
+  {value:'armor_break', label:'穿甲', description:'提高穿甲能力，可被部分功法和神通消耗或联动。'},
+  {value:'spore', label:'孢子', description:'按层数偷取目标攻击力，转化为自身攻击力。'},
+  {value:'poison', label:'中毒/剧毒', description:'在目标回合开始时造成持续木系伤害；中毒还会降低防御。'},
+  {value:'cold', label:'寒冷/虚弱', description:'寒冷降低目标攻击力，虚弱降低目标法宝增伤。'},
+  {value:'chill', label:'寒意/冻伤', description:'寒意降低目标速度，并可触发冻伤或强化冻伤。'},
+  {value:'shelter', label:'庇佑', description:'按层数提高自身攻击力和防御力。'},
+  {value:'shield', label:'护盾', description:'为自身提供护盾或强化护盾效果。'},
+  {value:'burn', label:'灼烧', description:'对目标叠加持续火系伤害。'},
+  {value:'rage_damage', label:'怒气增伤', description:'提升怒气技伤害，可能同时影响怒气暴击或爆伤。'},
+  {value:'disarm', label:'缴械', description:'限制目标使用部分法宝或普攻效果。'},
+  {value:'thunder', label:'聚雷/雷神意志', description:'聚雷提供减伤；雷神意志提高防御并可用于进入雷神化。'},
+  {value:'lifesteal', label:'汲取/回复', description:'按造成伤害或生命上限恢复生命。'},
+  {value:'attack_buff', label:'攻击提升', description:'直接或按层数提高自身攻击力。'},
+  {value:'defense_buff', label:'防御提升', description:'直接或按层数提高自身防御力。'},
+  {value:'custom', label:'自定义', description:'具体状态与效果见备注。'}
 ];
 // 默认邻接优先级只看占用格数：格数越多，越优先获得更多不同邻居。
 const SELF_PRIORITY_TIERS = [
@@ -816,8 +836,9 @@ function normalizeItemRecord(item, keepManualRate=false){
   const attributes = normalizeAttributes(item.attributes);
   const addAttributeRole = item.addAttributeRole === 'secondary' ? 'secondary' : 'primary';
   const effectType = EFFECT_OPTIONS.some(x=>x.value===item.effectType) ? item.effectType : defaultEffectType(area);
+  const combatStatus = COMBAT_STATUS_OPTIONS.some(x=>x.value===item.combatStatus) ? item.combatStatus : 'none';
   const effectNote = String(item.effectNote || '').trim().slice(0,160);
-  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, effectType, effectNote, enabled:item.enabled !== false};
+  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, effectType, combatStatus, effectNote, enabled:item.enabled !== false};
 }
 function techniqueOptionsHtml(includeNone=false){
   const grouped = ATTRIBUTE_OPTIONS.map(attribute=>{
@@ -1213,6 +1234,12 @@ function effectSelectHtml(it, idx){
   return `<select class="effect-select" data-inv-k="effectType" data-i="${idx}">${EFFECT_OPTIONS.map(x=>`<option value="${x.value}" ${it.effectType===x.value?'selected':''}>${x.label}</option>`).join('')}</select>`;
 }
 function effectLabel(value){ return EFFECT_OPTIONS.find(x=>x.value===value)?.label || '普通输出'; }
+function combatStatusSelectHtml(it, idx){
+  return `<select class="effect-select" data-inv-k="combatStatus" data-i="${idx}" title="${escapeAttr(combatStatusDescription(it.combatStatus))}">${COMBAT_STATUS_OPTIONS.map(x=>`<option value="${x.value}" ${it.combatStatus===x.value?'selected':''}>${x.label}</option>`).join('')}</select>`;
+}
+function combatStatusInfo(value){ return COMBAT_STATUS_OPTIONS.find(x=>x.value===value) || COMBAT_STATUS_OPTIONS[0]; }
+function combatStatusLabel(value){ return combatStatusInfo(value).label; }
+function combatStatusDescription(value){ return combatStatusInfo(value).description; }
 function normalizeReleaseOrder(){
   const valid = new Set(inventory.map(x=>String(x.uid)));
   const seen = new Set();
@@ -1231,7 +1258,8 @@ function renderReleaseOrder(){
   root.innerHTML = releaseOrder.map((uid,index)=>{
     const item = byUid.get(uid);
     if(!item) return '';
-    return `<div class="release-item"><span class="release-index">${index+1}</span><div class="release-name">#${item.no} ${escapeHtml(item.name)}<small>${escapeHtml(attributeLabel(item))}｜${item.cells.length}格｜${qualityName(item.quality)}${item.effectNote?`<br>${escapeHtml(item.effectNote)}`:''}</small></div><span class="pill gray">${effectLabel(item.effectType)}</span><div class="release-actions"><button data-release-move="up" data-uid="${escapeAttr(uid)}" ${index===0?'disabled':''}>↑</button><button data-release-move="down" data-uid="${escapeAttr(uid)}" ${index===releaseOrder.length-1?'disabled':''}>↓</button></div></div>`;
+    const statusText = item.combatStatus && item.combatStatus!=='none' ? `<br>状态：${escapeHtml(combatStatusLabel(item.combatStatus))}｜${escapeHtml(combatStatusDescription(item.combatStatus))}` : '';
+    return `<div class="release-item"><span class="release-index">${index+1}</span><div class="release-name">#${item.no} ${escapeHtml(item.name)}<small>${escapeHtml(attributeLabel(item))}｜${item.cells.length}格｜${qualityName(item.quality)}${statusText}${item.effectNote?`<br>备注：${escapeHtml(item.effectNote)}`:''}</small></div><span class="pill gray">${effectLabel(item.effectType)}</span><div class="release-actions"><button data-release-move="up" data-uid="${escapeAttr(uid)}" ${index===0?'disabled':''}>↑</button><button data-release-move="down" data-uid="${escapeAttr(uid)}" ${index===releaseOrder.length-1?'disabled':''}>↓</button></div></div>`;
   }).join('');
   root.querySelectorAll('button[data-release-move]').forEach(button=>button.addEventListener('click', e=>{
     const uid = String(e.currentTarget.dataset.uid);
@@ -1262,7 +1290,7 @@ function renderInventoryTable(){
   inventory = inventory.map((x,index)=>normalizeItemRecord({...x,uid:x.uid || `legacy-${x.no || index+1}`}, true));
   if(inventory.length === 0){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="col-empty" colspan="13"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
+    tr.innerHTML = `<td class="col-empty" colspan="14"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
     tbody.appendChild(tr);
     updateTableColumnLayout();
     renderInventoryCellSummary();
@@ -1281,7 +1309,8 @@ function renderInventoryTable(){
       <td class="col-awakened" data-label="红武觉醒">${redAwakenedControlHtml(it,'inv',idx)}</td>
       <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="${attributeChipClass(x)}">${escapeHtml(x)}</span>`).join('')}</div></td>
       <td class="col-effect" data-label="释放类型">${effectSelectHtml(it,idx)}</td>
-      <td class="col-effect-note" data-label="具体效果"><input type="text" data-inv-k="effectNote" data-i="${idx}" value="${escapeAttr(it.effectNote)}" placeholder="如：相邻同属性提升暴伤"></td>
+      <td class="col-combat-status" data-label="战斗状态">${combatStatusSelectHtml(it,idx)}</td>
+      <td class="col-effect-note" data-label="效果备注"><input type="text" data-inv-k="effectNote" data-i="${idx}" value="${escapeAttr(it.effectNote)}" placeholder="如：每回合获得3层强攻"></td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -1304,6 +1333,7 @@ function renderInventoryTable(){
       if(k==='bonusRate') inventory[i].bonusRate = Math.max(0, Number(e.target.value)||0);
       if(k==='redAwakened') inventory[i].redAwakened = e.target.checked;
       if(k==='effectType') inventory[i].effectType = e.target.value;
+      if(k==='combatStatus') inventory[i].combatStatus = e.target.value;
       if(k==='effectNote') inventory[i].effectNote = e.target.value.trim();
       if(k==='customPriority'){
         const raw = String(e.target.value || '').trim();
@@ -1436,6 +1466,7 @@ function addToInventory(defIndex, count){
       attributes: [selectedAddAttribute(def)],
       threeSelfBonus: !!def.threeSelfBonus,
       redAwakened: !!def.redAwakened,
+      combatStatus: def.combatStatus || 'none',
       effectNote: def.effectNote || '',
       customPriority: null
     }, true));
@@ -4279,7 +4310,7 @@ function solverWorkerMain(){
     }
 
     function optimizeFullPackings(deadline,nodeCap){
-      currentStage='阶段2：按实际总伤害与邻接顺序优化完整方案';
+      currentStage='阶段2：按布局伤害评分与邻接顺序优化完整方案';
       const rem=groups.map(g=>g.items.length);
       const lastIdx=groups.map(()=>-1);
       const placed=[], bonusEvents=[], priorityLinks=[];
@@ -4331,7 +4362,7 @@ function solverWorkerMain(){
     }
 
     function searchBestPartial(deadline,nodeCap){
-      currentStage='阶段2：按实际总伤害与邻接顺序搜索可行子集';
+      currentStage='阶段2：按布局伤害评分与邻接顺序搜索可行子集';
       const rem=groups.map(g=>g.items.length);
       const lastIdx=groups.map(()=>-1);
       const placed=[], bonusEvents=[], priorityLinks=[];
@@ -4462,7 +4493,7 @@ function renderLiveSolverStatus(){
 已耗时：${elapsed} ms（界面每 500 ms 刷新）
 距求解器最近一次进度报告：${sinceWorkerReport} ms
 当前是否完整装入：${s.bestComplete?'是':'否'}
-当前最好实际总伤害：${bestKnown?formatNum(s.bestTotal):'尚未形成可评分方案'}
+当前最好布局伤害评分：${bestKnown?formatNum(s.bestTotal):'尚未形成可评分方案'}
 当前最好基础值：${bestKnown?formatNum(s.bestBase):'-'}
 当前最好相邻加成：${bestKnown?formatNum(s.bestBonus):'-'}
 当前最好有效同属性邻接：${bestKnown?(s.bestAdjacency ?? 0):'-'}
@@ -4508,7 +4539,7 @@ function setSolverRunning(running){
   const solveBtn = document.getElementById('solveBtn');
   const cancelBtn = document.getElementById('cancelSolveBtn');
   solveBtn.disabled = running;
-  solveBtn.textContent = running ? '正在搜索…' : '搜索最高伤害布局';
+  solveBtn.textContent = running ? '正在搜索…' : '搜索最高布局评分';
   cancelBtn.disabled = !running;
 }
 
@@ -4616,12 +4647,12 @@ function describeSolutionDifference(current, previous){
   const delta=currentScore-previousScore;
   if(Math.abs(delta)>1e-9){
     const percent=Math.abs(previousScore)>1e-9 ? `（${delta>0?'+':''}${(delta/Math.abs(previousScore)*100).toFixed(2)}%）` : '';
-    return `实际总伤害${delta>0?'提高':'降低'} ${formatNum(Math.abs(delta))}${percent}。`;
+    return `布局伤害评分${delta>0?'提高':'降低'} ${formatNum(Math.abs(delta))}${percent}。`;
   }
   const manualCmp=compareNoticeVectors(current.manualPriorityVector,previous.manualPriorityVector);
-  if(manualCmp!==0) return `实际总伤害相同，但本次手动邻接优先级结果${manualCmp>0?'更好':'更差'}。`;
+  if(manualCmp!==0) return `布局伤害评分相同，但本次手动邻接优先级结果${manualCmp>0?'更好':'更差'}。`;
   const defaultCmp=compareNoticeVectors(current.defaultPriorityVector,previous.defaultPriorityVector);
-  if(defaultCmp!==0) return `实际总伤害相同，但本次默认格数优先级结果${defaultCmp>0?'更好':'更差'}。`;
+  if(defaultCmp!==0) return `布局伤害评分相同，但本次默认格数优先级结果${defaultCmp>0?'更好':'更差'}。`;
   const adjacencyDelta=(Number(current.adjacencyCount)||0)-(Number(previous.adjacencyCount)||0);
   if(adjacencyDelta!==0) return `前述指标相同，本次有效同属性邻接${adjacencyDelta>0?'更多':'更少'} ${Math.abs(adjacencyDelta)} 对。`;
   return '两次方案按当前全部比较规则评价持平。';
@@ -4636,7 +4667,7 @@ function showRetainedBestSearchState(retainedBest){
   if(!notice) return;
   notice.className='best-result-notice neutral';
   notice.textContent=retainedBest
-    ? `已载入同一配置下此前保留的最佳方案（实际总伤害 ${formatNum(retainedBest.totalScore)}）。本次搜索只有找到更优方案才会替换它。`
+    ? `已载入同一配置下此前保留的最佳方案（布局伤害评分 ${formatNum(retainedBest.totalScore)}，暂不含战斗状态）。本次搜索只有找到更优方案才会替换它。`
     : '当前配置还没有保留方案。本次计算结束后会自动保存评价最高的结果。';
 }
 
@@ -4650,7 +4681,7 @@ function renderBestResultNotice(currentBest, previousBest, comparisonToPrevious,
   const detail=describeSolutionDifference(currentBest, previousBest);
   if(!previousBest){
     notice.className='best-result-notice good';
-    notice.textContent=`已建立当前配置的首个最佳方案：实际总伤害 ${formatNum(currentBest.totalScore)}。${detail}`;
+    notice.textContent=`已建立当前配置的首个最佳方案：布局伤害评分 ${formatNum(currentBest.totalScore)}（暂不含战斗状态）。${detail}`;
   }else if(comparisonToPrevious>0){
     notice.className='best-result-notice good';
     notice.textContent=`本次方案优于此前最佳，已刷新保留方案。${detail}`;
@@ -4696,9 +4727,9 @@ function solveAndRender(){
   startSolverStatusHeartbeat(activeCells, inventory.length);
   const totalSearchArea = inventory.reduce((sum,x)=>sum+(x.cells?.length||0),0);
   const totalSearchBase = inventory.reduce((sum,x)=>sum+Math.max(0,Number(x.value)||0),0);
-  document.getElementById('statusBox').textContent = `正在后台搜索最高伤害布局（${searchMode==='fast'?'快速':'深度'}档，${workerCount} 个 Worker）…
+  document.getElementById('statusBox').textContent = `正在后台搜索最高布局评分（${searchMode==='fast'?'快速':'深度'}档，${workerCount} 个 Worker）…
 物品总占格：${totalSearchArea}，可用空间：${activeCells}
-${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最高伤害的可行子集。':(totalSearchArea<=activeCells?'先寻找全部物品的完整摆法，再按实际总伤害优化。':'物品总面积超过空间，将搜索实际总伤害最高的可行子集。')}
+${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索布局评分最高的可行子集。':(totalSearchArea<=activeCells?'先寻找全部物品的完整摆法，再按布局伤害评分优化。':'物品总面积超过空间，将搜索布局伤害评分最高的可行子集。')}
 节点上限：${nodeLimit.toLocaleString('zh-CN')}
 时间上限：${timeLimit} ms
 自定义邻接优先物品：${manualItems.length} 件
@@ -4886,7 +4917,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   const omittedText = omitted.length ? `\n\n本方案未放入：\n${omitted.map(x=>`#${x.no} ${x.name}（${x.cells.length}格）`).join('\n')}` : '';
   let conclusion;
   if(solverMeta.fullPackingFound){
-    conclusion = stopped ? '已确认所有物品均可放入；后续伤害与邻接优化达到时间/节点上限，返回目前找到的最好完整方案，但未证明全局最优。' : '已确认所有物品均可放入，并完成实际总伤害与邻接优化。';
+    conclusion = stopped ? '已确认所有物品均可放入；后续布局评分与邻接优化达到时间/节点上限，返回目前找到的最好完整方案，但未证明全局最优。' : '已确认所有物品均可放入，并完成布局伤害评分与邻接优化。';
   }else if(skipped && skipped.length){
     conclusion = stopped ? '至少一件物品在当前空间/方向规则下没有合法位置；搜索达到上限，返回目前按目标顺序找到的最佳可行子集。' : '至少一件物品在当前空间/方向规则下没有合法位置，因此无法完整装入；已返回最佳可行子集。';
   }else if(solverMeta.totalArea>activeCells){
@@ -4913,9 +4944,11 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
   const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
   const orderRows = (settings.releaseOrder || releaseOrder).map((uid,index)=>{
     const item = byUid.get(String(uid));
-    return item ? `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）${item.effectNote?`：${item.effectNote}`:''}` : '';
+    if(!item) return '';
+    const state = item.combatStatus && item.combatStatus!=='none' ? `｜状态：${combatStatusLabel(item.combatStatus)}（${combatStatusDescription(item.combatStatus)}）` : '';
+    return `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）${state}${item.effectNote?`｜备注：${item.effectNote}`:''}`;
   }).filter(Boolean).join('\n') || '尚未设置。';
-  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
+  document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 布局伤害评分（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n布局伤害评分：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n注意：强攻、庇佑、寒冷等战斗状态已记录，但尚未计入本评分。\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
 function buildPrioritySummary(best){
   const countByItem = new Map();
