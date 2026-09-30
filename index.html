@@ -302,7 +302,7 @@
         <input id="customBonusRate" type="hidden" value="0">
         <textarea id="customPattern" placeholder="用 # 表示占用格，用 . 表示空格。例如：\n##.\n.##"></textarea>
         <button id="addCustomBtn">添加到物品库</button>
-          <div class="hint">用 # 画出占用格；形状会自动规范化。四格自定义法宝按相邻法宝数量获得伤害加成；五格及以上红武需勾选觉醒。</div>
+          <div class="hint">用 # 画出占用格；形状会自动规范化。非红色四格法宝按相邻法宝数量获得伤害加成；四格及以上红武需勾选觉醒。</div>
         </div>
       </details>
     </div>
@@ -461,9 +461,9 @@
         <li>每种物品的“属性”默认都是主属性；勾选多属性后才可以改成副属性。</li>
         <li>物品库只显示添加数量；伤害和相邻加成由法宝格数、品质自动计算。</li>
         <li>同品质下，法宝占用格数越多，基础属性越高。</li>
-        <li>红武勾选“红武觉醒”后，才会按相邻同属性法宝数量获得自身伤害加成。</li>
+        <li>四格及以上红武都可勾选“红武觉醒”；觉醒后才会按相邻同属性法宝数量获得自身伤害加成。</li>
         <li>单格法宝会给每个同属性的相邻法宝提供百分比伤害加成。</li>
-        <li>四格法宝和已觉醒红武每相邻一个同属性的不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
+        <li>非红色四格法宝和已觉醒的四格及以上红武，每相邻一个同属性的不同法宝，都会按自身基础伤害获得一次相邻加成；相邻法宝越多，总伤害越高。</li>
         <li>只有属性相同的法宝相邻才会生效；主属性与副属性不同，因此两者相邻不会获得加成。</li>
         <li>开启“自身受加成”的红色三格物品按自身邻接规则计算；未开启的三格物品不因相邻物品给自身加成。</li>
         <li>同一背包与物品配置下，多次计算会自动保留评价最高的方案；若新结果更差，会提示差距并继续显示此前最佳方案。</li>
@@ -681,7 +681,7 @@ function normalizeItemRecord(item, keepManualRate=false){
   let quality = normalizeQualityForArea(item.quality || 'green', area);
   if(area === 5) quality = 'red';
   if(area === 3 && threeSelfBonus) quality = 'red';
-  const redAwakened = area >= 5 && quality === 'red' && !!item.redAwakened;
+  const redAwakened = area >= 4 && quality === 'red' && !!item.redAwakened;
   let value = Number(item.value);
   if(!Number.isFinite(value) || value <= 0) value = qualityValue(quality, area);
   let customPriority = item.customPriority;
@@ -1071,7 +1071,7 @@ function bonusKind(it){
 }
 function isRedWeapon(it){
   const area = Number(it && it.area) || (it && it.cells ? it.cells.length : 0);
-  return area >= 5 && it && it.quality === 'red';
+  return area >= 4 && it && it.quality === 'red';
 }
 function redAwakenedControlHtml(it, scope, idx){
   if(!isRedWeapon(it)) return '<span class="pill gray">不适用</span>';
