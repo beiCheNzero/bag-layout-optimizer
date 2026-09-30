@@ -308,7 +308,7 @@
       </div>
       <div id="buildSummary" class="build-summary"></div>
       <div id="techniqueEffects" class="technique-effects"></div>
-      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。“品质待补”表示功法名称已收录，但公开资料尚不足以确认品质和完整技能文本，并非功法不存在。星级会影响功法属性或技能效果；当前先记录星级与已核实的基础效果，精确升星数值待补充。</div>
+      <div class="hint">只有主功法会触发技能；副功法不触发技能，只提供属性数值，品质和星级会影响其数值。选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。“品质待补”表示功法名称已收录，但公开资料尚不足以确认品质，并非功法不存在。当前暂不计算精确升星数值。</div>
     </div>
 
     <div class="card library-card">
@@ -513,7 +513,7 @@
       <h2>7. 使用说明</h2>
       <ol>
         <li>先设置背包宽度、高度，并点击空间格子标记已解锁区域。</li>
-        <li>选择主功法和副功法；副功法不选时为单属性，选择后自动切换为多属性。</li>
+        <li>选择主功法和副功法；只有主功法触发技能，副功法只增加属性数值。副功法不选时为单属性，选择后自动切换为多属性。</li>
         <li>设置PVE/PVP和计划计算的战斗回合数；当前仅记录这些条件，待补充具体数值后参与伤害模拟。</li>
         <li>截图自动识别不准时，点击“开始半自动标注”：点物品任意格，选择正确形状，依次确认到全部格子完成。</li>
         <li>物品库默认单属性。需要第二种属性时勾选“多属性”，然后在操作前选择主属性或副属性。</li>
@@ -890,7 +890,7 @@ function renderBuildSummary(){
   const secondaryStar = Math.max(0, Math.min(4, Number(document.getElementById('secondaryTechniqueStar')?.value)||0));
   const mode = document.getElementById('battleMode')?.value==='pvp' ? 'PVP' : 'PVE';
   const rounds = Math.max(1, Math.floor(Number(document.getElementById('roundLimit')?.value)||1));
-  box.innerHTML = `<span class="attribute-chip primary">主：${escapeHtml(mainAttribute)}｜${escapeHtml(mainName)}｜${mainStar}星</span>${secondaryName?`<span class="attribute-chip secondary">副：${escapeHtml(secondaryAttribute)}｜${escapeHtml(secondaryName)}｜${secondaryStar}星</span>`:''}<span class="pill gray">${mode}｜${rounds} 回合</span>`;
+  box.innerHTML = `<span class="attribute-chip primary">主技能：${escapeHtml(mainAttribute)}｜${escapeHtml(mainName)}｜${mainStar}星</span>${secondaryName?`<span class="attribute-chip secondary">副属性：${escapeHtml(secondaryAttribute)}｜${escapeHtml(secondaryName)}｜${secondaryStar}星</span>`:''}<span class="pill gray">${mode}｜${rounds} 回合</span>`;
   renderTechniqueEffects();
 }
 function renderTechniqueEffects(){
@@ -903,8 +903,11 @@ function renderTechniqueEffects(){
     const known = TECHNIQUE_OPTIONS.find(x=>x.value===select.value);
     const name = selectedTechniqueName(scope);
     const quality = known ? (TECHNIQUE_QUALITY_LABEL[known.quality] || '品质待补') : '自定义';
-    const effect = known?.effect || '自定义功法尚未填写效果。';
-    return `<div class="technique-effect-card"><b>${scope==='main'?'主功法':'副功法'}｜${escapeHtml(name)}｜${quality}｜${star}星</b>${escapeHtml(effect)}<br><span class="hint">星级已记录；具体升星增量待补充。</span></div>`;
+    if(scope==='secondary'){
+      return `<div class="technique-effect-card"><b>副功法属性｜${escapeHtml(name)}｜${quality}｜${star}星</b>不触发该功法的技能，仅提供功法属性数值。<br><span class="hint">品质和星级已记录；具体属性数值待补充。</span></div>`;
+    }
+    const effect = known?.effect || '自定义主功法尚未填写技能效果。';
+    return `<div class="technique-effect-card"><b>主功法技能｜${escapeHtml(name)}｜${quality}｜${star}星</b>${escapeHtml(effect)}<br><span class="hint">仅主功法技能生效；具体升星增量待补充。</span></div>`;
   }).filter(Boolean);
   root.innerHTML = rows.join('');
 }
@@ -4718,7 +4721,7 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
     const currentResult = {
       best, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:meta.stopped, width:W, height:H, active:active.map(r=>r.slice()),
       inventory:inventory.map(x=>({...x,cells:cloneCells(x.cells)})),
-      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),secondaryTechnique:selectedTechniqueName('secondary'),mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
+      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),mainTechniqueRole:'skill_and_stats',secondaryTechnique:selectedTechniqueName('secondary'),secondaryTechniqueRole:'stats_only',mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
       skipped:skipped.map(x=>({no:x.no,name:x.name,area:x.area,value:x.value})),manualItems,
       solverMeta:{fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount}
     };
@@ -4906,7 +4909,7 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
     else multiMultiAdj++;
   }
   const settings = lastResult?.settings || {};
-  const techniqueLine = `${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}·${settings.mainTechniqueStar ?? (Number(document.getElementById('mainTechniqueStar').value)||0)}星${settings.secondaryTechnique?` + ${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}·${settings.secondaryTechniqueStar ?? (Number(document.getElementById('secondaryTechniqueStar').value)||0)}星`:''}`;
+  const techniqueLine = `主技能：${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}·${settings.mainTechniqueStar ?? (Number(document.getElementById('mainTechniqueStar').value)||0)}星${settings.secondaryTechnique?` + 副属性：${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}·${settings.secondaryTechniqueStar ?? (Number(document.getElementById('secondaryTechniqueStar').value)||0)}星`:''}`;
   const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
   const orderRows = (settings.releaseOrder || releaseOrder).map((uid,index)=>{
     const item = byUid.get(String(uid));
@@ -5020,9 +5023,11 @@ function loadConfig(){
 function exportResult(){
   const build = {
     mainTechnique:selectedTechniqueName('main'),
+    mainTechniqueRole:'skill_and_stats',
     mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,
     mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,
     secondaryTechnique:selectedTechniqueName('secondary'),
+    secondaryTechniqueRole:'stats_only',
     secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
     secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,
     battleMode:document.getElementById('battleMode').value,
