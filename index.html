@@ -92,6 +92,9 @@
   .build-field>span{font-size:12px;font-weight:700;color:#475569}
   .build-field select,.build-field input{width:100%}
   .build-summary{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .technique-effects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+  .technique-effect-card{padding:9px 10px;border:1px solid #dbe3ef;border-radius:9px;background:#fff;color:#475569;font-size:12px;line-height:1.55}
+  .technique-effect-card b{display:block;margin-bottom:2px;color:#1f2937;font-size:13px}
   .release-panel{margin-top:12px;padding:12px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc}
   .release-panel h3{margin:0 0 8px}
   .release-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px}
@@ -124,7 +127,7 @@
   .column-options input:checked+span::before{content:"✓";border-color:#2563eb;background:#2563eb}
   .column-options input:focus-visible+span{outline:2px solid #2563eb;outline-offset:2px}
   .hide-value-columns .col-value,.hide-bonus-rate-columns .col-bonus-rate,.hide-add-count-column .col-add-count{display:none}
-  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-effect{width:116px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
+  .col-enabled{width:42px}.col-no{width:44px}.col-shape{width:58px}.col-quality{width:88px}.col-awakened{width:92px}.col-attributes{width:150px}.col-effect{width:116px}.col-effect-note{width:220px}.col-value{width:96px}.col-bonus-rate{width:96px}.col-add-count{width:96px}.col-add-attribute{width:112px}.col-priority{width:76px}.col-action{width:60px}
   .table-scroll td.col-empty{grid-column:1/-1;width:100%;justify-content:center;text-align:center}
   .inventory-cell-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 12px;border:1px solid #dbe3ef;border-radius:8px;background:#f8fafc;color:#475569}
   .inventory-cell-summary span{font-size:12px}
@@ -221,7 +224,7 @@
   }
   @media (max-width:899px){
     main{grid-template-columns:1fr}
-    .space-body,.output-wrap,.result-main,.recognition-layout,.build-grid{grid-template-columns:1fr}
+    .space-body,.output-wrap,.result-main,.recognition-layout,.build-grid,.technique-effects{grid-template-columns:1fr}
     .table-scroll{overflow:visible;overscroll-behavior:auto;touch-action:pan-y}
     .table-scroll table,.table-scroll tbody,.table-scroll tr,.table-scroll td{touch-action:pan-y}
     .library-scroll,.inventory-scroll{max-height:none}
@@ -293,8 +296,10 @@
       <h2>2. 功法与战斗设置</h2>
       <div class="build-grid">
         <label class="build-field"><span>主功法</span><select id="mainTechnique"></select></label>
+        <label class="build-field"><span>主功法星级</span><select id="mainTechniqueStar"></select></label>
         <label class="build-field"><span>主功法属性</span><select id="mainTechniqueAttribute"></select></label>
         <label class="build-field"><span>副功法</span><select id="secondaryTechnique"></select></label>
+        <label class="build-field"><span>副功法星级</span><select id="secondaryTechniqueStar"></select></label>
         <label class="build-field"><span>副功法属性</span><select id="secondaryTechniqueAttribute"></select></label>
         <label id="customMainTechniqueField" class="build-field" hidden><span>自定义主功法名称</span><input id="customMainTechnique" type="text" placeholder="输入主功法名称"></label>
         <label id="customSecondaryTechniqueField" class="build-field" hidden><span>自定义副功法名称</span><input id="customSecondaryTechnique" type="text" placeholder="输入副功法名称"></label>
@@ -302,7 +307,8 @@
         <label class="build-field"><span>计算回合</span><input id="roundLimit" type="number" min="1" max="99" step="1" value="5"></label>
       </div>
       <div id="buildSummary" class="build-summary"></div>
-      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。当前版本先记录功法、流派与回合，具体功法数值稍后补充。</div>
+      <div id="techniqueEffects" class="technique-effects"></div>
+      <div class="hint">选择副功法后会自动开启多属性，并将主、副功法属性同步到法宝属性。星级会影响功法属性或技能效果；当前先记录星级与已核实的基础效果，精确升星数值待补充。</div>
     </div>
 
     <div class="card library-card">
@@ -350,10 +356,10 @@
         <button id="renumberBtn">按格数/品质重新编号</button>
         <button id="clearInventoryBtn" class="danger">清空清单</button>
       </div>
-      <div class="hint">每个条目代表一个实际拥有的法宝，属性由物品库加入时选择。只有属性相同的相邻法宝才会产生加成。</div>
+      <div class="hint">每个条目代表一个实际拥有的法宝。请将通用形状名称改成实际法宝名，并填写“具体效果”；不同法宝的相邻加成目标可能是攻击、暴伤、防御、治疗或法宝伤害，不能只按形状推断。</div>
       <div class="table-scroll inventory-scroll" aria-label="已有物品清单">
         <table id="inventoryTable">
-          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-effect">释放类型</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
+          <thead><tr><th class="col-no">编号</th><th class="col-name">名称</th><th class="col-shape">形状</th><th class="col-quality">品质</th><th class="col-awakened">红武觉醒</th><th class="col-attributes">属性</th><th class="col-effect">释放类型</th><th class="col-effect-note">具体效果</th><th class="col-value">基础属性</th><th class="col-value col-bonus-control">加成属性</th><th class="col-bonus-rate">加成率%</th><th class="col-priority">邻接优先级</th><th class="col-action">操作</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -559,15 +565,43 @@ const AREA_VALUE_BY_QUALITY = {
 const SINGLE_RATE_BY_QUALITY = {green:5, blue:8, purple:12, gold:16};
 const DEFAULT_ATTRIBUTE = '主属性';
 const ATTRIBUTE_OPTIONS = ['金','木','水','火','土','雷','体','邪'];
+const TECHNIQUE_QUALITY_LABEL = {gold:'金', purple:'紫', blue:'蓝', limited:'限定', unknown:'待核实'};
 const TECHNIQUE_OPTIONS = [
-  {value:'金蝉蜕劫法', attribute:'金'}, {value:'千变金刚诀', attribute:'金'}, {value:'断金透骨功', attribute:'金'}, {value:'金芒解甲经', attribute:'金'},
-  {value:'万叶迷踪法', attribute:'木'}, {value:'天地同寿诀', attribute:'木'}, {value:'甲木回春', attribute:'木'},
-  {value:'凌霜三舞', attribute:'水'}, {value:'千凛玉章', attribute:'水'}, {value:'滔洪将倾', attribute:'水'},
-  {value:'拜火誓咒', attribute:'火'}, {value:'求火焚心卷', attribute:'火'}, {value:'三头六臂法', attribute:'火'},
-  {value:'地龙震魄', attribute:'土'}, {value:'坤岳镇魂', attribute:'土'}, {value:'六合震荡诀', attribute:'土'}, {value:'地龙镇破功', attribute:'土'},
-  {value:'五雷禁行诀', attribute:'雷'}, {value:'聚雷', attribute:'雷'}, {value:'正一雷法', attribute:'雷'},
-  {value:'不动撼世相', attribute:'体'}, {value:'奇门遁甲', attribute:'体'},
-  {value:'祭血咒天诀', attribute:'邪'}, {value:'阴阳同济大法', attribute:'邪'}
+  {value:'金蝉蜕劫法', attribute:'金', quality:'gold', effect:'清除自身负面效果，造成金属性伤害；消耗强攻可追加伤害。'},
+  {value:'千变金刚诀', attribute:'金', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'断金透骨功', attribute:'金', quality:'gold', effect:'造成金属性伤害；目标生命较低时追加伤害，并按穿甲层数造成额外真实伤害。'},
+  {value:'金芒解甲经', attribute:'金', quality:'purple', effect:'造成金属性伤害，并按目标穿甲/穿甲·虚层数追加真实伤害。'},
+  {value:'万叶迷踪法', attribute:'木', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'天地同寿诀', attribute:'木', quality:'gold', effect:'造成木属性伤害；将孢子转化为血藤蔓，并按孢子层数治疗。'},
+  {value:'甲木回春', attribute:'木', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'朽毒归元谱', attribute:'木', quality:'purple', effect:'按中毒层数造成真实伤害，再造成木属性伤害并施加中毒。'},
+  {value:'凌霜三舞', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'千凛玉章', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'滔洪将倾', attribute:'水', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'玄冰溯流法', attribute:'水', quality:'purple', effect:'短时间提升反击率与反击伤害，并造成水属性伤害。'},
+  {value:'流水道典', attribute:'水', quality:'blue', effect:'基础效果资料待补充。'},
+  {value:'拜火誓咒', attribute:'火', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'求火焚星卷', attribute:'火', quality:'purple', effect:'战斗前期获得吸血；怒气技进入炎神附体并召唤陨石，重复释放可增加陨石数量。'},
+  {value:'三头六臂法', attribute:'火', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'真炎连霄经', attribute:'火', quality:'purple', effect:'提升连击率与连击伤害并释放火球；按火热层数追加伤害。'},
+  {value:'赤炼法经', attribute:'火', quality:'purple', effect:'连续释放火浪，每段施加灼烧。'},
+  {value:'焰波焚尽法', attribute:'火', quality:'purple', effect:'连续释放四次火浪，每段施加灼烧。'},
+  {value:'癫火连打', attribute:'火', quality:'gold', effect:'提升连击率与连击伤害并释放火球；按火热层数追加伤害，同时回复已损生命。'},
+  {value:'地龙震魄', attribute:'土', quality:'gold', effect:'基础效果资料待补充。'},
+  {value:'坤岳镇魂诀', attribute:'土', quality:'purple', effect:'已核实为紫色土系功法，具体技能文本待补充。'},
+  {value:'六合震荡诀', attribute:'土', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'地龙镇破功', attribute:'土', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'地脉倾轧诀', attribute:'土', quality:'purple', effect:'造成土属性伤害，并触发多次倾轧。'},
+  {value:'厚土炼体法', attribute:'土', quality:'purple', effect:'造成土属性伤害，并按庇佑层数追加伤害。'},
+  {value:'玄岳诀', attribute:'土', quality:'blue', effect:'基础效果资料待补充。'},
+  {value:'五雷禁行诀', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'聚雷', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'正一雷法', attribute:'雷', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'雷殛兵解法', attribute:'雷', quality:'purple', effect:'已核实为紫色雷系功法，含吸血/缴械方向机制，完整技能文本待补充。'},
+  {value:'不动撼世相', attribute:'体', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'奇门遁甲', attribute:'体', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'祭血咒天诀', attribute:'邪', quality:'unknown', effect:'基础效果资料待补充。'},
+  {value:'阴阳同济大法', attribute:'邪', quality:'unknown', effect:'基础效果资料待补充。'}
 ];
 const EFFECT_OPTIONS = [
   {value:'buff', label:'增益'},
@@ -778,14 +812,18 @@ function normalizeItemRecord(item, keepManualRate=false){
   const attributes = normalizeAttributes(item.attributes);
   const addAttributeRole = item.addAttributeRole === 'secondary' ? 'secondary' : 'primary';
   const effectType = EFFECT_OPTIONS.some(x=>x.value===item.effectType) ? item.effectType : defaultEffectType(area);
-  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, effectType, enabled:item.enabled !== false};
+  const effectNote = String(item.effectNote || '').trim().slice(0,160);
+  return {...item, cells:normalizeCells(item.cells || []), quality, value, bonusRate, threeSelfBonus, redAwakened, customPriority, attributes, addAttributeRole, effectType, effectNote, enabled:item.enabled !== false};
 }
 function techniqueOptionsHtml(includeNone=false){
   const grouped = ATTRIBUTE_OPTIONS.map(attribute=>{
-    const rows = TECHNIQUE_OPTIONS.filter(x=>x.attribute===attribute).map(x=>`<option value="${escapeAttr(x.value)}" data-attribute="${attribute}">${attribute}｜${escapeHtml(x.value)}</option>`).join('');
+    const rows = TECHNIQUE_OPTIONS.filter(x=>x.attribute===attribute).map(x=>`<option value="${escapeAttr(x.value)}" data-attribute="${attribute}">[${TECHNIQUE_QUALITY_LABEL[x.quality] || '待核实'}] ${escapeHtml(x.value)}</option>`).join('');
     return `<optgroup label="${attribute}系">${rows}</optgroup>`;
   }).join('');
   return `${includeNone?'<option value="">不选择副功法</option>':''}${grouped}<option value="custom">自定义功法</option>`;
+}
+function techniqueStarOptionsHtml(selected=0){
+  return [0,1,2,3,4].map(star=>`<option value="${star}" ${star===selected?'selected':''}>${star} 星</option>`).join('');
 }
 function attributeOptionsHtml(selected='金'){
   return ATTRIBUTE_OPTIONS.map(x=>`<option value="${x}" ${x===selected?'selected':''}>${x}</option>`).join('');
@@ -797,6 +835,8 @@ function initializeTechniqueControls(){
   secondary.innerHTML = techniqueOptionsHtml(true);
   main.value = '金蝉蜕劫法';
   secondary.value = '';
+  document.getElementById('mainTechniqueStar').innerHTML = techniqueStarOptionsHtml(0);
+  document.getElementById('secondaryTechniqueStar').innerHTML = techniqueStarOptionsHtml(0);
   document.getElementById('mainTechniqueAttribute').innerHTML = attributeOptionsHtml('金');
   document.getElementById('secondaryTechniqueAttribute').innerHTML = attributeOptionsHtml('木');
   syncTechniqueSettings();
@@ -817,6 +857,7 @@ function syncTechniqueAttribute(scope){
 function syncTechniqueSettings(){
   const mainSelect = document.getElementById('mainTechnique');
   const secondarySelect = document.getElementById('secondaryTechnique');
+  const secondaryStar = document.getElementById('secondaryTechniqueStar');
   const mainAttribute = document.getElementById('mainTechniqueAttribute');
   const secondaryAttribute = document.getElementById('secondaryTechniqueAttribute');
   if(!mainSelect || !secondarySelect || !mainAttribute || !secondaryAttribute) return;
@@ -824,6 +865,7 @@ function syncTechniqueSettings(){
   document.getElementById('customMainTechniqueField').hidden = mainSelect.value!=='custom';
   document.getElementById('customSecondaryTechniqueField').hidden = secondarySelect.value!=='custom';
   secondaryAttribute.disabled = !hasSecondary;
+  secondaryStar.disabled = !hasSecondary;
   document.getElementById('multiAttributeMode').checked = hasSecondary;
   document.getElementById('primaryAttribute').value = mainAttribute.value || '金';
   document.getElementById('secondaryAttribute').value = secondaryAttribute.value || '木';
@@ -840,9 +882,27 @@ function renderBuildSummary(){
   const secondaryName = selectedTechniqueName('secondary');
   const mainAttribute = document.getElementById('mainTechniqueAttribute')?.value || '金';
   const secondaryAttribute = document.getElementById('secondaryTechniqueAttribute')?.value || '';
+  const mainStar = Math.max(0, Math.min(4, Number(document.getElementById('mainTechniqueStar')?.value)||0));
+  const secondaryStar = Math.max(0, Math.min(4, Number(document.getElementById('secondaryTechniqueStar')?.value)||0));
   const mode = document.getElementById('battleMode')?.value==='pvp' ? 'PVP' : 'PVE';
   const rounds = Math.max(1, Math.floor(Number(document.getElementById('roundLimit')?.value)||1));
-  box.innerHTML = `<span class="attribute-chip primary">主：${escapeHtml(mainAttribute)}｜${escapeHtml(mainName)}</span>${secondaryName?`<span class="attribute-chip secondary">副：${escapeHtml(secondaryAttribute)}｜${escapeHtml(secondaryName)}</span>`:''}<span class="pill gray">${mode}｜${rounds} 回合</span>`;
+  box.innerHTML = `<span class="attribute-chip primary">主：${escapeHtml(mainAttribute)}｜${escapeHtml(mainName)}｜${mainStar}星</span>${secondaryName?`<span class="attribute-chip secondary">副：${escapeHtml(secondaryAttribute)}｜${escapeHtml(secondaryName)}｜${secondaryStar}星</span>`:''}<span class="pill gray">${mode}｜${rounds} 回合</span>`;
+  renderTechniqueEffects();
+}
+function renderTechniqueEffects(){
+  const root = document.getElementById('techniqueEffects');
+  if(!root) return;
+  const rows = ['main','secondary'].map(scope=>{
+    const select = document.getElementById(scope==='main'?'mainTechnique':'secondaryTechnique');
+    if(!select?.value) return '';
+    const star = Math.max(0, Math.min(4, Number(document.getElementById(scope==='main'?'mainTechniqueStar':'secondaryTechniqueStar')?.value)||0));
+    const known = TECHNIQUE_OPTIONS.find(x=>x.value===select.value);
+    const name = selectedTechniqueName(scope);
+    const quality = known ? (TECHNIQUE_QUALITY_LABEL[known.quality] || '待核实') : '自定义';
+    const effect = known?.effect || '自定义功法尚未填写效果。';
+    return `<div class="technique-effect-card"><b>${scope==='main'?'主功法':'副功法'}｜${escapeHtml(name)}｜${quality}｜${star}星</b>${escapeHtml(effect)}<br><span class="hint">星级已记录；具体升星增量待补充。</span></div>`;
+  }).filter(Boolean);
+  root.innerHTML = rows.join('');
 }
 function init(){
   active = Array.from({length:6},()=>Array(7).fill(true));
@@ -885,6 +945,8 @@ function bindEvents(){
   });
   document.getElementById('mainTechniqueAttribute').addEventListener('change', syncTechniqueSettings);
   document.getElementById('secondaryTechniqueAttribute').addEventListener('change', syncTechniqueSettings);
+  document.getElementById('mainTechniqueStar').addEventListener('change', renderBuildSummary);
+  document.getElementById('secondaryTechniqueStar').addEventListener('change', renderBuildSummary);
   document.getElementById('customMainTechnique').addEventListener('input', renderBuildSummary);
   document.getElementById('customSecondaryTechnique').addEventListener('input', renderBuildSummary);
   document.getElementById('battleMode').addEventListener('change', renderBuildSummary);
@@ -1162,7 +1224,7 @@ function renderReleaseOrder(){
   root.innerHTML = releaseOrder.map((uid,index)=>{
     const item = byUid.get(uid);
     if(!item) return '';
-    return `<div class="release-item"><span class="release-index">${index+1}</span><div class="release-name">#${item.no} ${escapeHtml(item.name)}<small>${escapeHtml(attributeLabel(item))}｜${item.cells.length}格｜${qualityName(item.quality)}</small></div><span class="pill gray">${effectLabel(item.effectType)}</span><div class="release-actions"><button data-release-move="up" data-uid="${escapeAttr(uid)}" ${index===0?'disabled':''}>↑</button><button data-release-move="down" data-uid="${escapeAttr(uid)}" ${index===releaseOrder.length-1?'disabled':''}>↓</button></div></div>`;
+    return `<div class="release-item"><span class="release-index">${index+1}</span><div class="release-name">#${item.no} ${escapeHtml(item.name)}<small>${escapeHtml(attributeLabel(item))}｜${item.cells.length}格｜${qualityName(item.quality)}${item.effectNote?`<br>${escapeHtml(item.effectNote)}`:''}</small></div><span class="pill gray">${effectLabel(item.effectType)}</span><div class="release-actions"><button data-release-move="up" data-uid="${escapeAttr(uid)}" ${index===0?'disabled':''}>↑</button><button data-release-move="down" data-uid="${escapeAttr(uid)}" ${index===releaseOrder.length-1?'disabled':''}>↓</button></div></div>`;
   }).join('');
   root.querySelectorAll('button[data-release-move]').forEach(button=>button.addEventListener('click', e=>{
     const uid = String(e.currentTarget.dataset.uid);
@@ -1193,7 +1255,7 @@ function renderInventoryTable(){
   inventory = inventory.map((x,index)=>normalizeItemRecord({...x,uid:x.uid || `legacy-${x.no || index+1}`}, true));
   if(inventory.length === 0){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="col-empty" colspan="12"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
+    tr.innerHTML = `<td class="col-empty" colspan="13"><div class="empty">暂无已有物品。请先从物品库点击“添加”。</div></td>`;
     tbody.appendChild(tr);
     updateTableColumnLayout();
     renderInventoryCellSummary();
@@ -1212,6 +1274,7 @@ function renderInventoryTable(){
       <td class="col-awakened" data-label="红武觉醒">${redAwakenedControlHtml(it,'inv',idx)}</td>
       <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="${attributeChipClass(x)}">${escapeHtml(x)}</span>`).join('')}</div></td>
       <td class="col-effect" data-label="释放类型">${effectSelectHtml(it,idx)}</td>
+      <td class="col-effect-note" data-label="具体效果"><input type="text" data-inv-k="effectNote" data-i="${idx}" value="${escapeAttr(it.effectNote)}" placeholder="如：相邻同属性提升暴伤"></td>
       <td class="col-value" data-label="基础属性"><input type="number" data-inv-k="value" data-i="${idx}" min="0" step="1" value="${formatPlain(it.value)}"></td>
       <td class="col-value col-bonus-control" data-label="加成属性">${bonusControlHtml(it, idx)}</td>
       <td class="col-bonus-rate" data-label="加成率"><input type="number" data-inv-k="bonusRate" data-i="${idx}" min="0" step="1" value="${formatPlain(it.bonusRate)}" ${bonusKind(it)==='none' && it.quality !== 'red'?'disabled':''}></td>
@@ -1234,6 +1297,7 @@ function renderInventoryTable(){
       if(k==='bonusRate') inventory[i].bonusRate = Math.max(0, Number(e.target.value)||0);
       if(k==='redAwakened') inventory[i].redAwakened = e.target.checked;
       if(k==='effectType') inventory[i].effectType = e.target.value;
+      if(k==='effectNote') inventory[i].effectNote = e.target.value.trim();
       if(k==='customPriority'){
         const raw = String(e.target.value || '').trim();
         inventory[i].customPriority = raw === '' ? null : Math.max(1, Math.min(99, Math.floor(Number(raw)||1)));
@@ -1365,6 +1429,7 @@ function addToInventory(defIndex, count){
       attributes: [selectedAddAttribute(def)],
       threeSelfBonus: !!def.threeSelfBonus,
       redAwakened: !!def.redAwakened,
+      effectNote: def.effectNote || '',
       customPriority: null
     }, true));
   }
@@ -4649,7 +4714,7 @@ ${skipped.length>0?'存在单件无法合法放置的物品，将直接搜索最
     const currentResult = {
       best, nodes:totalNodes, elapsed:Math.round(performance.now()-wallStarted), stopped:meta.stopped, width:W, height:H, active:active.map(r=>r.slice()),
       inventory:inventory.map(x=>({...x,cells:cloneCells(x.cells)})),
-      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),secondaryTechnique:selectedTechniqueName('secondary'),mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
+      settings:{allowRotate:document.getElementById('allowRotate').checked,allowMirror:document.getElementById('allowMirror').checked,useAdjacencyBonus:useBonus,searchMode,parallelSearch:parallel,workerCount,mainTechnique:selectedTechniqueName('main'),secondaryTechnique:selectedTechniqueName('secondary'),mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,battleMode:document.getElementById('battleMode').value,roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),releaseOrder:releaseOrder.slice(),optimizationOrder:['complete_loading','actual_total_score','manual_priority_neighbors','default_priority_neighbors','total_adjacency_count'],priorityTiers:SELF_PRIORITY_TIERS,manualPriorityRule:'1 is highest; blank uses default rules',assignmentStrategy:'geometry_then_item_assignment'},
       skipped:skipped.map(x=>({no:x.no,name:x.name,area:x.area,value:x.value})),manualItems,
       solverMeta:{fullPackingAttempted:meta.fullPackingAttempted,fullPackingFound:meta.fullPackingFound,fullSearchCutoff:meta.fullSearchCutoff,optimizationCutoff:meta.optimizationCutoff,fallbackCutoff:meta.fallbackCutoff,totalArea:meta.totalArea,totalBase:meta.totalBase,totalItems:meta.totalItems,fullGroupCount:meta.fullGroupCount,detailedGroupCount:meta.detailedGroupCount,assignmentStrategy:meta.assignmentStrategy,singletonDeferredCount:meta.singletonDeferredCount,assignmentChecks:meta.assignmentChecks,lnsCycles:meta.lnsCycles||0,lnsImprovements:meta.lnsImprovements||0,workerCount}
     };
@@ -4837,11 +4902,11 @@ function renderStats(best, nodes, elapsed, stopped, activeCells, skipped, solver
     else multiMultiAdj++;
   }
   const settings = lastResult?.settings || {};
-  const techniqueLine = `${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}${settings.secondaryTechnique?` + ${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}`:''}`;
+  const techniqueLine = `${settings.mainTechniqueAttribute || document.getElementById('mainTechniqueAttribute').value}·${settings.mainTechnique || selectedTechniqueName('main')}·${settings.mainTechniqueStar ?? (Number(document.getElementById('mainTechniqueStar').value)||0)}星${settings.secondaryTechnique?` + ${settings.secondaryTechniqueAttribute || document.getElementById('secondaryTechniqueAttribute').value}·${settings.secondaryTechnique}·${settings.secondaryTechniqueStar ?? (Number(document.getElementById('secondaryTechniqueStar').value)||0)}星`:''}`;
   const byUid = new Map(inventory.map(x=>[String(x.uid),x]));
   const orderRows = (settings.releaseOrder || releaseOrder).map((uid,index)=>{
     const item = byUid.get(String(uid));
-    return item ? `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）` : '';
+    return item ? `${index+1}. #${item.no} ${item.name}（${effectLabel(item.effectType)}）${item.effectNote?`：${item.effectNote}`:''}` : '';
   }).filter(Boolean).join('\n') || '尚未设置。';
   document.getElementById('statusBox').textContent = `${conclusion}\n耗时：${elapsed} ms\n功法：${techniqueLine}\n场景：${(settings.battleMode || document.getElementById('battleMode').value)==='pvp'?'PVP':'PVE'}｜计划回合：${settings.roundLimit || document.getElementById('roundLimit').value}\n求解起点：从已有物品清单自动生成\n自动布局策略：多格物品先布局，${solverMeta.singletonDeferredCount ?? 0} 件单格物品延后分配（伤害分配检查 ${Number(solverMeta.assignmentChecks||0).toLocaleString('zh-CN')} 次）\nLNS 局部精确修复：${Number(solverMeta.lnsCycles||0).toLocaleString('zh-CN')} 轮，刷新最佳 ${Number(solverMeta.lnsImprovements||0).toLocaleString('zh-CN')} 次\n完整装入：${best.complete?'是':'否'}\n物品总占格：${solverMeta.totalArea ?? '-'}，可用空间：${activeCells}\n放入物品：${best.itemCount}/${solverMeta.totalItems ?? inventory.length}\n空余可用格：${unused}\n比较顺序：完整装入 ＞ 实际总伤害（基础伤害 + 同属性相邻加成）＞ 手动指定法宝有效邻接（1最高，同优先级合并比较）＞ 默认格数优先级 ＞ 有效邻接数量\n实际总伤害：${formatNum(best.totalScore)} = 基础伤害 ${formatNum(best.baseScore)} + 相邻加成 ${formatNum(best.bonusScore)}\n有效同属性邻接：${best.adjacencyCount ?? 0} 对｜异属性相邻（不加成）：${differentAttributeAdj} 对\n有效邻接结构：单格-单格 ${singleSingleAdj} 对｜单格-多格 ${singleMultiAdj} 对｜多格-多格 ${multiMultiAdj} 对\n\n法宝释放顺序：\n${orderRows}\n\n优先法宝邻接：\n${prioritySummary}\n\n摆放清单：\n${list}\n\n相邻加成清单：\n${eventList}${omittedText}${skippedText}`;
 }
@@ -4884,6 +4949,8 @@ function saveConfig(){
     allowMirror:document.getElementById('allowMirror').checked,
     mainTechnique:document.getElementById('mainTechnique').value,
     secondaryTechnique:document.getElementById('secondaryTechnique').value,
+    mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,
+    secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,
     mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,
     secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
     customMainTechnique:document.getElementById('customMainTechnique').value,
@@ -4924,8 +4991,12 @@ function loadConfig(){
     document.getElementById('allowMirror').checked = !!data.allowMirror;
     const mainTechnique = document.getElementById('mainTechnique');
     const secondaryTechnique = document.getElementById('secondaryTechnique');
-    mainTechnique.value = [...mainTechnique.options].some(x=>x.value===data.mainTechnique) ? data.mainTechnique : '金蝉蜕劫法';
-    secondaryTechnique.value = [...secondaryTechnique.options].some(x=>x.value===data.secondaryTechnique) ? data.secondaryTechnique : '';
+    const savedMainTechnique = data.mainTechnique==='求火焚心卷' ? '求火焚星卷' : data.mainTechnique;
+    const savedSecondaryTechnique = data.secondaryTechnique==='求火焚心卷' ? '求火焚星卷' : data.secondaryTechnique;
+    mainTechnique.value = [...mainTechnique.options].some(x=>x.value===savedMainTechnique) ? savedMainTechnique : '金蝉蜕劫法';
+    secondaryTechnique.value = [...secondaryTechnique.options].some(x=>x.value===savedSecondaryTechnique) ? savedSecondaryTechnique : '';
+    document.getElementById('mainTechniqueStar').value = String(Math.max(0,Math.min(4,Number(data.mainTechniqueStar)||0)));
+    document.getElementById('secondaryTechniqueStar').value = String(Math.max(0,Math.min(4,Number(data.secondaryTechniqueStar)||0)));
     const savedMainAttribute = ATTRIBUTE_OPTIONS.includes(data.mainTechniqueAttribute) ? data.mainTechniqueAttribute : normalizeAttributes(data.primaryAttribute || '金')[0];
     const savedSecondaryAttribute = ATTRIBUTE_OPTIONS.includes(data.secondaryTechniqueAttribute) ? data.secondaryTechniqueAttribute : normalizeAttributes(data.secondaryAttribute || '木')[0];
     document.getElementById('mainTechniqueAttribute').value = ATTRIBUTE_OPTIONS.includes(savedMainAttribute) ? savedMainAttribute : '金';
@@ -4945,8 +5016,10 @@ function exportResult(){
   const build = {
     mainTechnique:selectedTechniqueName('main'),
     mainTechniqueAttribute:document.getElementById('mainTechniqueAttribute').value,
+    mainTechniqueStar:Number(document.getElementById('mainTechniqueStar').value)||0,
     secondaryTechnique:selectedTechniqueName('secondary'),
     secondaryTechniqueAttribute:document.getElementById('secondaryTechniqueAttribute').value,
+    secondaryTechniqueStar:Number(document.getElementById('secondaryTechniqueStar').value)||0,
     battleMode:document.getElementById('battleMode').value,
     roundLimit:Math.max(1,Math.floor(Number(document.getElementById('roundLimit').value)||1)),
     releaseOrder:releaseOrder.slice()
