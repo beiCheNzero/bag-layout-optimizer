@@ -297,12 +297,130 @@
     .release-actions{grid-column:3;grid-row:1/3}
     #resultGrid .cell.item-cell .attr-mark{font-size:8px;padding:1px 2px}
   }
+
+  /* 2026 visual refresh: keep the dense calculator readable without changing its behavior. */
+  :root{
+    --bg:#edf3f9; --panel:rgba(255,255,255,.96); --text:#172033; --muted:#64748b;
+    --line:#cbd7e6; --accent:#2563eb; --accent-strong:#1d4ed8; --accent2:#eff6ff;
+  }
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 8% 0%,rgba(59,130,246,.14),transparent 29rem),
+      radial-gradient(circle at 92% 12%,rgba(14,165,233,.10),transparent 26rem),
+      linear-gradient(180deg,#f8fbff 0,#eef3f8 48%,#f8fafc 100%);
+  }
+  header{
+    position:relative;overflow:hidden;padding:30px 24px;
+    background:linear-gradient(125deg,#0b1731 0%,#102a55 55%,#0d4d77 100%);
+    box-shadow:0 12px 30px rgba(15,23,42,.18);
+  }
+  header::before,header::after{content:"";position:absolute;border-radius:999px;pointer-events:none}
+  header::before{width:320px;height:320px;right:-80px;top:-210px;background:rgba(96,165,250,.20);filter:blur(2px)}
+  header::after{width:210px;height:210px;right:18%;bottom:-180px;background:rgba(34,211,238,.15)}
+  .header-inner{position:relative;z-index:1;max-width:1640px;margin:0 auto}
+  .header-kicker{display:inline-flex;align-items:center;margin-bottom:9px;padding:4px 10px;border:1px solid rgba(147,197,253,.35);border-radius:999px;background:rgba(30,64,175,.22);color:#bfdbfe;font-size:11px;font-weight:800;letter-spacing:.1em}
+  header h1{font-size:26px;letter-spacing:.02em}
+  header p{max-width:760px;color:#cbdaf1;font-size:14px}
+  main{gap:18px;padding:22px 24px 36px;max-width:1688px}
+  .card{
+    padding:18px;border-color:rgba(203,213,225,.82);border-radius:16px;
+    box-shadow:0 10px 28px rgba(15,23,42,.065),0 1px 3px rgba(15,23,42,.05);
+    backdrop-filter:blur(8px);
+  }
+  h2{display:flex;align-items:center;gap:8px;margin-bottom:15px;border-left:0;padding:0;color:#16233a;font-size:17px;letter-spacing:.01em}
+  h2::before{content:"";width:5px;height:21px;flex:0 0 5px;border-radius:999px;background:linear-gradient(180deg,#3b82f6,#06b6d4);box-shadow:0 0 0 4px #eff6ff}
+  h3{color:#26364f}
+  input[type="number"],input[type="text"],textarea,select{min-height:36px;border-color:#cbd5e1;box-shadow:0 1px 2px rgba(15,23,42,.025);transition:border-color .15s,box-shadow .15s,background-color .15s}
+  input[type="number"]:focus,input[type="text"]:focus,textarea:focus,select:focus{border-color:#60a5fa;outline:0;box-shadow:0 0 0 3px rgba(59,130,246,.14)}
+  button{min-height:35px;border-color:#cbd5e1;font-weight:650;transition:transform .15s,box-shadow .15s,background-color .15s,border-color .15s}
+  button:hover{border-color:#94a3b8;background:#f8fafc;box-shadow:0 3px 9px rgba(15,23,42,.08);transform:translateY(-1px)}
+  button:active{transform:translateY(0)}
+  button.primary{background:linear-gradient(135deg,#2563eb,#1d4ed8);box-shadow:0 5px 12px rgba(37,99,235,.22)}
+  .build-field,.divine-panel,.release-panel,.custom-item-panel,.embedded-solver,.recognition-box{border-color:#d7e1ed;background:linear-gradient(180deg,#fbfdff,#f5f8fc)}
+  .catalog-toolbar,.column-options{border-color:#d7e1ed;background:linear-gradient(135deg,#f8fbff,#f1f6fb)}
+  .table-scroll{
+    border-color:#d6e0eb;border-radius:12px;background:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+    scrollbar-color:#94a3b8 #edf2f7;scrollbar-width:thin;
+  }
+  .table-scroll::-webkit-scrollbar{width:10px;height:10px}
+  .table-scroll::-webkit-scrollbar-track{background:#edf2f7;border-radius:999px}
+  .table-scroll::-webkit-scrollbar-thumb{background:#94a3b8;border:2px solid #edf2f7;border-radius:999px}
+  .table-scroll th{height:44px;padding:9px 10px;background:#edf4fb;color:#3e506a;font-weight:800;border-bottom-color:#cfdae8}
+  .table-scroll td{padding:9px 10px;border-bottom-color:#e5ebf2}
+  .table-scroll tbody tr:nth-child(even) td{background:#fbfdff}
+  .table-scroll tbody tr:hover td{background:#eff6ff}
+  .stats{gap:10px}
+  .stat{padding:11px;border-color:#dbe5f0;border-radius:12px;background:linear-gradient(145deg,#f8fbff,#f1f6fb)}
+  .stat b{color:#13233d}
+  .best-result-notice,.inventory-cell-summary{border-radius:11px}
+
+  @media (min-width:601px){
+    .table-scroll{overflow:auto;overscroll-behavior:contain}
+    .table-scroll table{display:table;width:100%;max-width:none;margin:0;table-layout:auto}
+    .table-scroll thead{display:table-header-group;width:auto}
+    .table-scroll tbody{display:table-row-group;width:auto}
+    .table-scroll tr{display:table-row;width:auto}
+    .table-scroll th,.table-scroll td{display:table-cell;width:auto;text-align:center;vertical-align:middle}
+    .table-scroll th.col-name,.table-scroll td.col-name{text-align:left}
+    .library-scroll table{min-width:1180px}
+    .inventory-scroll table{min-width:2200px}
+    .table-scroll .col-enabled,.table-scroll .col-no{min-width:58px}
+    .table-scroll .col-name{min-width:210px}
+    .table-scroll .col-shape{min-width:76px}
+    .table-scroll .col-quality{min-width:96px}
+    .table-scroll .col-awakened{min-width:118px}
+    .table-scroll .col-attributes{min-width:160px}
+    .table-scroll .col-artifact-type{min-width:120px}
+    .table-scroll .col-effect{min-width:130px}
+    .table-scroll .col-combat-status{min-width:170px}
+    .table-scroll .col-turn-rule{min-width:150px}
+    .table-scroll .col-effect-note{min-width:230px}
+    .table-scroll .col-value,.table-scroll .col-bonus-rate,.table-scroll .col-add-count{min-width:106px}
+    .table-scroll .col-add-attribute{min-width:124px}
+    .table-scroll .col-priority{min-width:92px}
+    .table-scroll .col-action{min-width:72px}
+    #itemsTable .col-enabled,#inventoryTable .col-no{position:sticky;left:0;z-index:4;background:#fff}
+    #itemsTable .col-name,#inventoryTable .col-name{position:sticky;left:58px;z-index:3;background:#fff;box-shadow:6px 0 10px -10px rgba(15,23,42,.7)}
+    #itemsTable thead .col-enabled,#itemsTable thead .col-name,#inventoryTable thead .col-no,#inventoryTable thead .col-name{z-index:7;background:#edf4fb}
+    #itemsTable tbody tr:nth-child(even) .col-enabled,#itemsTable tbody tr:nth-child(even) .col-name,#inventoryTable tbody tr:nth-child(even) .col-no,#inventoryTable tbody tr:nth-child(even) .col-name{background:#fbfdff}
+    #itemsTable tbody tr:hover .col-enabled,#itemsTable tbody tr:hover .col-name,#inventoryTable tbody tr:hover .col-no,#inventoryTable tbody tr:hover .col-name{background:#eff6ff}
+  }
+  @media (min-width:900px) and (orientation:landscape){
+    main{grid-template-columns:minmax(0,1fr);grid-template-areas:"space" "build" "library" "inventory" "result" "help";gap:18px}
+    .library-scroll{height:470px;max-height:470px}
+    .inventory-scroll{height:560px;max-height:560px}
+  }
+  @media (max-width:899px){
+    main{padding:14px}
+    .table-scroll{overflow:auto}
+  }
+  @media (max-width:600px){
+    header{padding:21px 14px 22px}
+    .header-kicker{margin-bottom:7px;font-size:10px}
+    header h1{font-size:21px}
+    header p{font-size:12px;line-height:1.65}
+    main{padding:10px;gap:11px}
+    .card{padding:12px;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,.055)}
+    h2{font-size:15px}
+    h2::before{height:18px}
+    .table-scroll{overflow:visible;box-shadow:none}
+    .table-scroll table{min-width:0!important;width:100%!important}
+    .table-scroll tr{padding:11px;border-color:#d8e2ee;border-radius:11px;box-shadow:0 4px 12px rgba(15,23,42,.045)}
+    .table-scroll tbody tr:nth-child(even) td,.table-scroll tbody tr:hover td{background:transparent}
+    #itemsTable .col-enabled,#itemsTable .col-name,#inventoryTable .col-no,#inventoryTable .col-name{position:static;background:transparent;box-shadow:none}
+    .build-field{padding:9px}
+  }
 </style>
 </head>
 <body class="hide-bonus-rate-columns">
 <header>
-  <h1>背包排列优化工具</h1>
-  <p>选择主副功法、配置法宝与释放顺序，再搜索相同属性法宝的更优背包布局。</p>
+  <div class="header-inner">
+    <span class="header-kicker">法宝配置 · 邻接优化 · 出伤规划</span>
+    <h1>背包排列优化工具</h1>
+    <p>选择主副功法、配置法宝与释放顺序，再搜索相同属性法宝的更优背包布局。</p>
+  </div>
 </header>
 <main>
   <section>
