@@ -1700,11 +1700,34 @@ function renderQualitySelect(sel, selected, disabled=false, area=1){
   sel.innerHTML = allowed.map(id=>`<option value="${id}" ${id===q?'selected':''}>${qualityLabel(id, area)}</option>`).join('');
   sel.disabled = disabled;
 }
-function qualitySelectHtml(idx, value, scope, disabled=false, area=1){
+function qualitySelectHtml(idx, value, scope, disabled=false, area=1, item=null){
+  if(item?.referenceSource){
+    // 配置法宝的品质对应同名法宝的不同配置条目，只列出配置中实际存在的品质。
+    const variants=referenceQualityVariants(item);
+    const opts=variants.map(x=>`<option value="${x.quality}" ${x.quality===item.quality?'selected':''}>${qualityName(x.quality)}</option>`).join('');
+    return `<select data-${scope}-k="quality" data-i="${idx}" ${variants.length<=1?'disabled':''}>${opts}</select>`;
+  }
   const allowed = allowedQualitiesForArea(area);
   const q = normalizeQualityForArea(value, area);
   const opts = allowed.map(id=>`<option value="${id}" ${id===q?'selected':''}>${qualityLabel(id, area)}</option>`).join('');
   return `<select data-${scope}-k="quality" data-i="${idx}" ${disabled?'disabled':''}>${opts}</select>`;
+}
+function referenceQualityVariants(item){
+  const artifacts=referenceCatalog?.artifacts || [];
+  const variants=artifacts.filter(x=>x.name===item.name && (x.cells || []).length===item.cells.length);
+  if(!variants.some(x=>x.id===item.referenceId)) variants.push({id:item.referenceId, quality:item.quality});
+  return variants.sort((a,b)=>RECOGNITION_QUALITY_ORDER.indexOf(a.quality)-RECOGNITION_QUALITY_ORDER.indexOf(b.quality));
+}
+// 切换配置法宝品质：换成同名对应品质的配置数据，保留编号、觉醒/长老、出手规则等用户设置。
+function switchReferenceQuality(item, quality){
+  const artifact=(referenceCatalog?.artifacts || []).find(x=>x.name===item.name && x.quality===quality && (x.cells || []).length===item.cells.length);
+  if(!artifact) return item;
+  const next=referenceArtifactToItem(artifact);
+  const keys=['referenceId','quality','baseStats','currentStats','referenceDescription','referenceFeature','referenceSkills','referenceSkillIds','referenceAwakening','referenceElder','resonance','sourcePower'];
+  const merged={...item};
+  keys.forEach(k=>{ merged[k]=next[k]; });
+  if(String(item.id || '').startsWith('reference-')) merged.id=next.id;
+  return normalizeItemRecord(merged, true);
 }
 
 function applySize(){
@@ -1767,7 +1790,7 @@ function renderItemsTable(){
       <td class="col-enabled" data-label="启用"><input type="checkbox" data-lib-k="enabled" data-i="${idx}" ${it.enabled!==false?'checked':''}></td>
       <td class="col-name" data-label="法宝与普通作用"><span class="shape-name">${escapeHtml(it.name)}</span>${sourceBadge}<div class="hint">${area} 格</div>${referenceEffect}</td>
       <td class="col-shape" data-label="形状"></td>
-      <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'lib', locked, area)}</td>
+      <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'lib', locked, area, it)}</td>
       <td class="col-value" data-label="普通数值">${statsCell}</td>
       <td class="col-bonus-rate" data-label="相邻加成率">${bonusCell}</td>
       <td class="col-add-count" data-label="添加数量"><input type="number" data-add-count="${idx}" min="1" step="1" value="1"></td>
@@ -1782,7 +1805,9 @@ function renderItemsTable(){
       const i = Number(e.target.dataset.i), k = e.target.dataset.libK;
       if(!itemDefs[i]) return;
       if(k==='enabled') itemDefs[i].enabled = e.target.checked;
-      if(k==='quality'){
+      if(k==='quality' && itemDefs[i].referenceSource){
+        itemDefs[i] = switchReferenceQuality(itemDefs[i], e.target.value);
+      }else if(k==='quality'){
         itemDefs[i].quality = e.target.value;
         itemDefs[i].value = qualityValue(e.target.value, itemDefs[i].cells.length);
         itemDefs[i].bonusRate = defaultBonusRate(itemDefs[i].cells.length, e.target.value, itemDefs[i].threeSelfBonus);
@@ -2027,7 +2052,7 @@ function renderInventoryTable(){
       <td class="col-no" data-label="编号"><b>#${it.no}</b></td>
       <td class="col-name" data-label="名称与作用">${nameCell}</td>
       <td class="col-shape" data-label="形状"></td>
-      <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area)}</td>
+      <td class="col-quality" data-label="品质">${qualitySelectHtml(idx, it.quality, 'inv', locked, area, it)}</td>
       <td class="col-awakened" data-label="觉醒/长老">${redAwakenedControlHtml(it,'inv',idx)}</td>
       <td class="col-attributes" data-label="属性"><div class="attribute-cell">${normalizeAttributes(it.attributes).map(x=>`<span class="${attributeChipClass(x)}">${escapeHtml(x)}</span>`).join('')}</div></td>
       <td class="col-artifact-type" data-label="法宝类型">${artifactTypeSelectHtml(it,idx)}</td>
@@ -2048,7 +2073,9 @@ function renderInventoryTable(){
       const i = Number(e.target.dataset.i), k = e.target.dataset.invK;
       if(!inventory[i]) return;
       if(k==='name') inventory[i].name = e.target.value.trim() || inventory[i].name;
-      if(k==='quality'){
+      if(k==='quality' && inventory[i].referenceSource){
+        inventory[i] = switchReferenceQuality(inventory[i], e.target.value);
+      }else if(k==='quality'){
         inventory[i].quality = e.target.value;
         inventory[i].value = qualityValue(e.target.value, inventory[i].cells.length);
         inventory[i].bonusRate = defaultBonusRate(inventory[i].cells.length, e.target.value, inventory[i].threeSelfBonus);
