@@ -1430,7 +1430,8 @@ function syncTechniqueSettings(){
   document.getElementById('customMainTechniqueField').hidden = mainSelect.value!=='custom';
   document.getElementById('customSecondaryTechniqueField').hidden = secondarySelect.value!=='custom';
   secondaryAttribute.disabled = !hasSecondary;
-  secondaryStar.disabled = !hasSecondary;
+  // 副功法未选择时也允许预先设置星级，选中副功法后直接沿用该值。
+  secondaryStar.disabled = false;
   document.getElementById('multiAttributeMode').checked = hasSecondary;
   document.getElementById('primaryAttribute').value = mainAttribute.value || '金';
   document.getElementById('secondaryAttribute').value = secondaryAttribute.value || '木';
