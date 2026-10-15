@@ -5832,6 +5832,12 @@ function loadConfig(){
         for(let i=0;i<qty;i++) inventory.push(normalizeItemRecord({uid:'migrate-'+Date.now()+'-'+no, no:no++, typeId:def.id, typeName:def.name, name:def.name, cells:cloneCells(def.cells), quality:def.quality, value:def.value, bonusRate:def.bonusRate, threeSelfBonus:!!def.threeSelfBonus}, true));
       }
     }
+    // 旧版配置数据把体系与邪系法宝的属性写反了，读取旧存档时对调回来。
+    if(data.referenceDataMeta?.elementMapping !== 'v2'){
+      const fixElement=it=>it.referenceSource ? normalizeItemRecord({...it, attributes:normalizeAttributes(it.attributes).map(x=>x==='体'?'邪':x==='邪'?'体':x)}, true) : it;
+      itemDefs = itemDefs.map(fixElement);
+      inventory = inventory.map(fixElement);
+    }
     releaseOrder = Array.isArray(data.releaseOrder) ? data.releaseOrder.map(String) : [];
     nextItemNo = data.nextItemNo || (inventory.reduce((m,x)=>Math.max(m, Number(x.no)||0),0)+1);
     document.getElementById('gridW').value = W; document.getElementById('gridH').value = H;

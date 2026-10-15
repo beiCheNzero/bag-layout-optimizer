@@ -14,7 +14,8 @@ const awakening = readJson('awakening.json');
 const battleSkills = readJson('BattleSkill.json');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
-const elementNames = {1:'金',2:'木',3:'水',4:'火',5:'土',6:'雷',7:'体',8:'邪'};
+// 7/8 对应元素掩码 128/256，技能文本分别为“邪系”“体系”。
+const elementNames = {1:'金',2:'木',3:'水',4:'火',5:'土',6:'雷',7:'邪',8:'体'};
 const qualityNames = {1:'green',2:'blue',3:'purple',4:'gold',5:'red'};
 const formNames = {0:'bead',2:'sword',3:'music',4:'exotic',5:'shield',6:'spear',7:'blade',8:'hammer',9:'banner'};
 const shapeById = new Map(catalog.shapes.map(shape => [shape.id, shape]));
@@ -112,6 +113,7 @@ const output = {
     resourceVersion: catalog.meta?.resourceVersion || '',
     awakeningCompleteCount: Number(catalog.meta?.awakeningCount) || 0,
     awakeningTotal: Number(catalog.meta?.awakeningTotal) || artifacts.filter(x => x.awakening).length,
+    elementMapping: 'v2',
     note: '0–3觉来自正式配置；4–5觉按参考项目说明属于先遣资源预适配，正式服开放后仍需核对。'
   },
   attributes: catalog.attrs,
