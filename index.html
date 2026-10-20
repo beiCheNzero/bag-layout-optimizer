@@ -872,6 +872,8 @@ let referenceCatalog = null;
 let referenceSkillMap = new Map();
 let referenceCatalogLoaded = false;
 let referenceCatalogLoadError = '';
+// 参考数据中的演示/占位装备，不属于实际可选择的法宝。
+const EXCLUDED_REFERENCE_ARTIFACT_IDS = new Set([100001,100002,100003,100004,100005,100006,200001]);
 let configLoadedThisSession = false;
 let detailTooltipPinnedTrigger = null;
 let retainedBestRecord = null;
@@ -992,7 +994,7 @@ async function loadReferenceCatalog(){
     if(!response.ok) throw new Error(`HTTP ${response.status}`);
     const data=await response.json();
     if(!Array.isArray(data.artifacts) || !Array.isArray(data.techniques)) throw new Error('数据结构不完整');
-    referenceCatalog=data;
+    referenceCatalog={...data,artifacts:data.artifacts.filter(artifact=>!EXCLUDED_REFERENCE_ARTIFACT_IDS.has(Number(artifact.id)))};
     referenceSkillMap=new Map((data.skills || []).map(skill=>[Number(skill.id),skill]));
     referenceCatalogLoaded=true;
     referenceCatalogLoadError='';

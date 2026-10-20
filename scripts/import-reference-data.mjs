@@ -20,6 +20,8 @@ const qualityNames = {1:'green',2:'blue',3:'purple',4:'gold',5:'red'};
 const formNames = {0:'bead',2:'sword',3:'music',4:'exotic',5:'shield',6:'spear',7:'blade',8:'hammer',9:'banner'};
 const shapeById = new Map(catalog.shapes.map(shape => [shape.id, shape]));
 const skillById = new Map(catalog.skills.map(skill => [skill.id, skill]));
+// 参考项目中的演示/占位装备，不属于玩家实际可选择的法宝。
+const excludedEquipIds = new Set([100001,100002,100003,100004,100005,100006,200001]);
 
 const cleanText = value => String(value || '')
   .replace(/<[^>]+>/g, '')
@@ -28,7 +30,7 @@ const cleanText = value => String(value || '')
   .replace(/\r/g, '')
   .trim();
 
-const artifacts = catalog.equips.map(equip => {
+const artifacts = catalog.equips.filter(equip => !excludedEquipIds.has(Number(equip.id))).map(equip => {
   const shape = shapeById.get(equip.shapeId);
   const base = Object.fromEntries((equip.base || []).map(row => [String(row.attr), row.value]));
   const normalSkills = (equip.skillIds || []).map(id => skillById.get(id)).filter(Boolean);
